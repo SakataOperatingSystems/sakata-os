@@ -3,31 +3,59 @@ import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 
 export async function getCurrentPermissions(): Promise<Set<string>> {
   const supabase = await createClient();
-  const { membership } = await getOrganizationContext();
 
-  const { data: membershipRoles, error: membershipRolesError } =
-    await supabase
-      .from("membership_roles")
-      .select("role_id")
-      .eq("membership_id", membership.id);
+  const { membership, organization } = await getOrganizationContext();
 
-  if (membershipRolesError) {
+  if (membership.status !== "active") {
+    throw new Error("Forbidden: inactive organization membership.");
+  }
+
+  if (organization.status !== "active") {
+    throw new Error("Forbidden: inactive organization.");
+  }
+
+  const { data: assignments, error: assignmentsError } = await supabase
+    .from("membership_roles")
+    .select("role_id")
+    .eq("membership_id", membership.id);
+
+  if (assignmentsError) {
     throw new Error(
-      `Failed to load membership roles: ${membershipRolesError.message}`
+      `Failed to load membership roles: ${assignmentsError.message}`
     );
   }
 
-  const roleIds = membershipRoles.map((row) => row.role_id);
-
-  if (roleIds.length === 0) {
-    return new Set();
+  if (!assignments || assignments.length === 0) {
+    return new Set<string>();
   }
+
+  const roleIds = assignments.map((assignment) => assignment.role_id);
+
+  const { data: roles, error: rolesError } = await supabase
+    .from("roles")
+    .select("id, organization_id, scope, status")
+    .in("id", roleIds)
+    .eq("organization_id", organization.id)
+    .eq("scope", "organization")
+    .eq("status", "active");
+
+  if (rolesError) {
+    throw new Error(
+      `Failed to load organization roles: ${rolesError.message}`
+    );
+  }
+
+  if (!roles || roles.length === 0) {
+    return new Set<string>();
+  }
+
+  const validRoleIds = roles.map((role) => role.id);
 
   const { data: rolePermissions, error: rolePermissionsError } =
     await supabase
       .from("role_permissions")
       .select("permission_id")
-      .in("role_id", roleIds);
+      .in("role_id", validRoleIds);
 
   if (rolePermissionsError) {
     throw new Error(
@@ -35,17 +63,17 @@ export async function getCurrentPermissions(): Promise<Set<string>> {
     );
   }
 
-  const permissionIds = [
-    ...new Set(rolePermissions.map((row) => row.permission_id)),
-  ];
-
-  if (permissionIds.length === 0) {
-    return new Set();
+  if (!rolePermissions || rolePermissions.length === 0) {
+    return new Set<string>();
   }
+
+  const permissionIds = rolePermissions.map(
+    (rolePermission) => rolePermission.permission_id
+  );
 
   const { data: permissions, error: permissionsError } = await supabase
     .from("permissions")
-    .select("code")
+    .select("id, code")
     .in("id", permissionIds);
 
   if (permissionsError) {
@@ -54,7 +82,13 @@ export async function getCurrentPermissions(): Promise<Set<string>> {
     );
   }
 
-  return new Set(permissions.map((permission) => permission.code));
+  const permissionSet = new Set<string>();
+
+  for (const permission of permissions ?? []) {
+    permissionSet.add(permission.code);
+  }
+
+  return permissionSet;
 }
 
 export async function hasPermission(
