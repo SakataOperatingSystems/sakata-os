@@ -15,35 +15,28 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
-
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-
           cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+
             supabaseResponse.cookies.set(name, value, options);
           });
         },
       },
-    },
+    }
   );
 
-  const { data: claims } = await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
 
-  const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  const claims = data?.claims;
 
-  if (!claims && !isLoginPage) {
+  if (!claims && !request.nextUrl.pathname.startsWith("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
 
-  if (claims && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
