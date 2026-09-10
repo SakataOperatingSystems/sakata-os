@@ -17,32 +17,46 @@ export async function getOrganizationContext() {
     .from("user_profiles")
     .select("id, auth_user_id, display_name, phone, status")
     .eq("auth_user_id", user.id)
+    .eq("status", "active")
     .maybeSingle();
 
   if (profileError) {
     throw new Error(
-      `Failed to load user profile: ${profileError.message}`
+      `Failed to load active user profile: ${profileError.message}`
     );
   }
 
   if (!profile) {
-    throw new Error("Authenticated user does not have a user profile.");
+    throw new Error(
+      "Authenticated user does not have an active user profile."
+    );
   }
 
   const { data: membership, error: membershipError } = await supabase
     .from("organization_memberships")
     .select(
-      "id, organization_id, user_profile_id, status, joined_at"
+      `
+        id,
+        organization_id,
+        user_profile_id,
+        status,
+        joined_at,
+        organizations (
+          id,
+          name,
+          slug,
+          organization_type,
+          status
+        )
+      `
     )
     .eq("user_profile_id", profile.id)
     .eq("status", "active")
-    .order("joined_at", { ascending: true })
-    .limit(1)
     .maybeSingle();
 
   if (membershipError) {
     throw new Error(
-      `Failed to load organization membership: ${membershipError.message}`
+      `Failed to load active organization membership: ${membershipError.message}`
     );
   }
 
@@ -52,10 +66,27 @@ export async function getOrganizationContext() {
     );
   }
 
+  const organization = Array.isArray(membership.organizations)
+    ? membership.organizations[0]
+    : membership.organizations;
+
+  if (!organization) {
+    throw new Error(
+      "Active organization membership does not reference an organization."
+    );
+  }
+
+  if (organization.status !== "active") {
+    throw new Error(
+      "The user's organization is not active."
+    );
+  }
+
   return {
     user,
     profile,
     membership,
+    organization,
     organizationId: membership.organization_id,
   };
 }
