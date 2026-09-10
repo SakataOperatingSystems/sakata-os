@@ -1,60 +1,76 @@
-export default function Home() {
+import { requirePermission } from "@/app/lib/auth/authorization";
+
+export default async function Home() {
+  await requirePermission("organization.read");
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <header className="flex items-center justify-between border-b border-slate-800 pb-6">
-          <div>
-            <p className="text-sm font-medium tracking-widest text-slate-400">
-              SAKATA OPERATING SYSTEMS
-            </p>
-            <h1 className="mt-2 text-3xl font-bold">
-              Control Center
-            </h1>
-          </div>
-
-          <div className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300">
-            Platform
-          </div>
-        </header>
-
-        <section className="mt-12">
-          <p className="text-sm uppercase tracking-widest text-slate-500">
-            System Status
+      <div className="mx-auto max-w-6xl px-6 py-16">
+        <header className="mb-12">
+          <p className="text-sm font-medium tracking-[0.25em] text-sky-300">
+            SAKATA OPERATING SYSTEMS
           </p>
 
-          <h2 className="mt-3 text-4xl font-bold">
-            SAKATA OS is alive.
-          </h2>
+          <h1 className="mt-4 text-5xl font-bold tracking-tight">
+            Control Center
+          </h1>
 
           <p className="mt-4 max-w-2xl text-lg text-slate-400">
-            The foundation of the SAKATA Operating System is now running.
-            This control center will become the command layer for organizations,
-            operations, workflows, intelligence and decision-making.
+            Central operating platform for organizations, products,
+            permissions, workflows, and operational control.
           </p>
-        </section>
+        </header>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-3">
+        <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <p className="text-sm text-slate-400">Platform</p>
-            <h3 className="mt-2 text-xl font-semibold">SAKATA OS</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              Core operating platform
+
+            <h2 className="mt-2 text-2xl font-semibold">
+              SAKATA OS Core
+            </h2>
+
+            <p className="mt-3 text-slate-500">
+              Core platform for identity, access control, organization
+              management, audit, configuration, and shared system services.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <p className="text-sm text-slate-400">Architecture</p>
-            <h3 className="mt-2 text-xl font-semibold">Multi-Tenant</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              One platform, isolated organizations
+
+            <h2 className="mt-2 text-2xl font-semibold">
+              Multi-Tenant
+            </h2>
+
+            <p className="mt-3 text-slate-500">
+              One platform serving isolated organizations through controlled
+              tenant data, roles, permissions, and configuration.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <p className="text-sm text-slate-400">First Product</p>
-            <h3 className="mt-2 text-xl font-semibold">School OS</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              School operations control system
+
+            <h2 className="mt-2 text-2xl font-semibold">
+              School OS
+            </h2>
+
+            <p className="mt-3 text-slate-500">
+              School operations control system built on the SAKATA OS core
+              platform.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <p className="text-sm text-slate-400">Security</p>
+
+            <h2 className="mt-2 text-2xl font-semibold">
+              Permission Controlled
+            </h2>
+
+            <p className="mt-3 text-slate-500">
+              Access to protected application areas is determined by the
+              authenticated user&apos;s organization permissions.
             </p>
           </div>
         </section>
