@@ -1,8 +1,10 @@
 ﻿import { requirePermission } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
+import ConfigurationEditor from "./configuration-editor";
 
 type ConfigurationRow = {
+  organization_product_module_id: string;
   configuration_definition_id: string;
   module_code: string;
   configuration_code: string;
@@ -135,7 +137,10 @@ export default async function ConfigurationCenterPage() {
       }
 
       if (resolved?.[0]) {
-        configurationRows.push(resolved[0]);
+        configurationRows.push({
+          organization_product_module_id: organizationProductModule.id,
+          ...resolved[0],
+        });
       }
     }
   }
@@ -249,53 +254,70 @@ export default async function ConfigurationCenterPage() {
                 {configurations.map((configuration) => (
                   <div
                     key={configuration.configuration_definition_id}
-                    className="grid gap-4 px-6 py-5 md:grid-cols-[1fr_180px_180px]"
+                    className="px-6 py-5"
                   >
-                    <div>
-                      <p className="font-medium">
-                        {configuration.configuration_code.replaceAll(
-                          "_",
-                          " "
-                        )}
-                      </p>
+                    <div className="grid gap-4 md:grid-cols-[1fr_180px_180px]">
+                      <div>
+                        <p className="font-medium">
+                          {configuration.configuration_code.replaceAll(
+                            "_",
+                            " "
+                          )}
+                        </p>
 
-                      <p className="mt-1 text-xs text-slate-500">
-                        Type: {configuration.value_type}
-                        {configuration.is_required
-                          ? " • Required"
-                          : ""}
-                      </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Type: {configuration.value_type}
+                          {configuration.is_required
+                            ? " • Required"
+                            : ""}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-500">
+                          Effective Value
+                        </p>
+
+                        <p className="mt-1 font-mono text-lg text-slate-200">
+                          {JSON.stringify(
+                            configuration.effective_value
+                          )}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-500">
+                          Source
+                        </p>
+
+                        <span
+                          className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                            configuration.value_source === "organization"
+                              ? "bg-blue-500/15 text-blue-300"
+                              : "bg-slate-800 text-slate-300"
+                          }`}
+                        >
+                          {configuration.value_source === "organization"
+                            ? "Organization Override"
+                            : "System Default"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">
-                        Effective Value
-                      </p>
-
-                      <p className="mt-1 font-mono text-lg text-slate-200">
-                        {JSON.stringify(
-                          configuration.effective_value
-                        )}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">
-                        Source
-                      </p>
-
-                      <span
-                        className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                          configuration.value_source === "organization"
-                            ? "bg-blue-500/15 text-blue-300"
-                            : "bg-slate-800 text-slate-300"
-                        }`}
-                      >
-                        {configuration.value_source === "organization"
-                          ? "Organization Override"
-                          : "System Default"}
-                      </span>
-                    </div>
+                    <ConfigurationEditor
+                      organizationProductModuleId={
+                        configuration.organization_product_module_id
+                      }
+                      configurationDefinitionId={
+                        configuration.configuration_definition_id
+                      }
+                      configurationCode={
+                        configuration.configuration_code
+                      }
+                      valueType={configuration.value_type}
+                      currentValue={configuration.effective_value}
+                      valueSource={configuration.value_source}
+                    />
                   </div>
                 ))}
               </div>
