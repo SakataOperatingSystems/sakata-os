@@ -19,9 +19,8 @@ export default async function SchoolHome() {
         </h1>
 
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-400">
-          Central operational workspace for managing the school&apos;s
-          academic, administrative, financial, people, and operational
-          processes.
+          Central operational workspace for managing the school's academic,
+          administrative, financial, people, and operational processes.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -63,24 +62,31 @@ export default async function SchoolHome() {
             </p>
 
             <p className="mt-5 text-sm font-medium text-slate-300">
-              Open module →
+              Open module
             </p>
           </Link>
 
-          <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-              Coming next
+          <Link
+            href="/school/classes"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-slate-600"
+          >
+            <p className="text-xs font-medium uppercase tracking-wider text-sky-300">
+              Academic Structure
             </p>
 
-            <h3 className="mt-3 text-xl font-semibold text-slate-300">
+            <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
               Classes
             </h3>
 
-            <p className="mt-3 text-sm leading-6 text-slate-500">
-              Classes and academic structure will connect to the active
-              academic periods.
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              Define and manage classes within their academic periods,
+              including levels, streams, and operational status.
             </p>
-          </article>
+
+            <p className="mt-5 text-sm font-medium text-slate-300">
+              Open module
+            </p>
+          </Link>
 
           <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
