@@ -1,11 +1,22 @@
-import Link from "next/link";
-import { requirePermission } from "@/app/lib/auth/authorization";
+﻿import Link from "next/link";
+import {
+  hasPermission,
+  requirePermission,
+} from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 
 export default async function SchoolHome() {
   await requirePermission("school.academic_periods.read");
 
   const { organization } = await getOrganizationContext();
+
+  const canReadStudents = await hasPermission("school.students.read");
+  const canReadEnrollments = await hasPermission("school.enrollments.read");
+
+  const visibleOperatingSurfaces =
+    3 +
+    (canReadStudents ? 1 : 0) +
+    (canReadEnrollments ? 1 : 0);
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
@@ -51,29 +62,35 @@ export default async function SchoolHome() {
             <p className="mt-2 text-2xl font-bold">Academic Operations</p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              The current School OS foundation is being built around
-              controlled academic structure and lifecycle.
+              The School OS foundation connects academic periods, normalized
+              structure, classes, students, and enrollment history.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">Visible Operating Surfaces</p>
+            <p className="text-sm text-slate-400">
+              Visible Operating Surfaces
+            </p>
 
-            <p className="mt-2 text-2xl font-bold">3</p>
+            <p className="mt-2 text-2xl font-bold">
+              {visibleOperatingSurfaces}
+            </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Academic periods, academic structure, and classes are currently
-              available from this operating home.
+              Academic periods, academic structure, classes, students, and
+              enrollments are available according to the organization&apos;s
+              permissions.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">Next Operating Domain</p>
+            <p className="text-sm text-slate-400">Current Operating Chain</p>
 
-            <p className="mt-2 text-2xl font-bold">Students</p>
+            <p className="mt-2 text-2xl font-bold">Student Lifecycle</p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Student operations follow the established academic foundation.
+              Student identity now connects to enrollment, class placement,
+              and academic-period history.
             </p>
           </div>
         </section>
@@ -89,8 +106,8 @@ export default async function SchoolHome() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              Establish the academic structure first, then build the student,
-              teaching, assessment, and intelligence workflows on top of it.
+              Establish the academic structure first, then connect students
+              and enrollment history to that controlled foundation.
             </p>
           </div>
 
@@ -160,6 +177,54 @@ export default async function SchoolHome() {
                 Open module →
               </p>
             </Link>
+
+            {canReadStudents && (
+              <Link
+                href="/school/students"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-emerald-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
+                  Student Operations
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-emerald-200">
+                  Students
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Maintain the master student entity independently from class
+                  placement and enrollment history.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-emerald-300">
+                  Open module →
+                </p>
+              </Link>
+            )}
+
+            {canReadEnrollments && (
+              <Link
+                href="/school/enrollments"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-emerald-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
+                  Student Lifecycle
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-emerald-200">
+                  Enrollments
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Connect a student to a class and academic period while
+                  preserving historical movement over time.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-emerald-300">
+                  Open module →
+                </p>
+              </Link>
+            )}
           </div>
         </section>
 
@@ -167,29 +232,31 @@ export default async function SchoolHome() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
-                Next Operating Domain
+                Student Lifecycle
               </p>
 
-              <h2 className="mt-2 text-2xl font-bold">Students</h2>
+              <h2 className="mt-2 text-2xl font-bold">
+                Admission → Student → Enrollment
+              </h2>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Student operations will connect people, admissions, enrollment,
-                class placement, attendance, assessment, results, and later
-                academic intelligence to the established academic foundation.
+                The current operating chain establishes a master student
+                record first, then connects that student to a class and
+                academic period through a historical enrollment record.
               </p>
             </div>
 
             <div className="rounded-xl border border-slate-700 bg-slate-950 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Status
+                Current State
               </p>
 
-              <p className="mt-2 font-semibold text-slate-300">
-                Foundation first
+              <p className="mt-2 font-semibold text-emerald-300">
+                Foundation operational
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Student operating surface comes next.
+                Student and enrollment surfaces are live.
               </p>
             </div>
           </div>
