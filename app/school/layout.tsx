@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { requirePermission } from "@/app/lib/auth/authorization";
+import {
+  hasPermission,
+  requirePermission,
+} from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 
 export default async function SchoolLayout({
@@ -8,6 +11,7 @@ export default async function SchoolLayout({
   await requirePermission("school.academic_periods.read");
 
   const { organization } = await getOrganizationContext();
+  const canReadStudents = await hasPermission("school.students.read");
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -52,6 +56,15 @@ export default async function SchoolLayout({
             >
               Academic Periods
             </Link>
+
+            {canReadStudents && (
+              <Link
+                href="/school/students"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Students
+              </Link>
+            )}
           </div>
         </nav>
       </header>
