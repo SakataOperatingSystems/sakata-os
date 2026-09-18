@@ -1,6 +1,7 @@
 ﻿import { requirePermission } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
+import WorkflowDefinitionForm from "./form";
 
 type WorkflowDefinition = {
   id: string;
@@ -207,6 +208,65 @@ export default async function WorkflowsPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-sm text-slate-400">Transitions</p>
             <p className="mt-2 text-3xl font-bold">{counts.transitions}</p>
+          </div>
+        </section>
+
+        <section className="mb-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div>
+            <WorkflowDefinitionForm />
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+              Governance Boundary
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold text-slate-100">
+              Definition first
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              A workflow definition establishes the governed lifecycle before
+              states and transitions are configured.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-200">
+                  1. Workflow Definition
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Identity, description, and lifecycle status.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-200">
+                  2. States
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Controlled operational states belonging to the definition.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-200">
+                  3. Transitions
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Permitted routes between governed states.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-200">
+                  4. Runtime
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Future operational instances execute the configured lifecycle.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
