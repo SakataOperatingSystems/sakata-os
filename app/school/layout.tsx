@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import {
   hasPermission,
   requirePermission,
@@ -18,6 +18,10 @@ export default async function SchoolLayout({
 
   const canReadEnrollments = await hasPermission(
     "school.enrollments.read"
+  );
+
+  const canReadAttendance = await hasPermission(
+    "school.attendance.read"
   );
 
   return (
@@ -79,6 +83,15 @@ export default async function SchoolLayout({
                 className="text-slate-400 transition hover:text-white"
               >
                 Enrollments
+              </Link>
+            )}
+
+            {canReadAttendance && (
+              <Link
+                href="/school/attendance"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Attendance
               </Link>
             )}
           </div>

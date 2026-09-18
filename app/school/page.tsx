@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import {
   hasPermission,
   requirePermission,
@@ -11,12 +11,18 @@ export default async function SchoolHome() {
   const { organization } = await getOrganizationContext();
 
   const canReadStudents = await hasPermission("school.students.read");
-  const canReadEnrollments = await hasPermission("school.enrollments.read");
+  const canReadEnrollments = await hasPermission(
+    "school.enrollments.read"
+  );
+  const canReadAttendance = await hasPermission(
+    "school.attendance.read"
+  );
 
   const visibleOperatingSurfaces =
     3 +
     (canReadStudents ? 1 : 0) +
-    (canReadEnrollments ? 1 : 0);
+    (canReadEnrollments ? 1 : 0) +
+    (canReadAttendance ? 1 : 0);
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
@@ -63,7 +69,8 @@ export default async function SchoolHome() {
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
               The School OS foundation connects academic periods, normalized
-              structure, classes, students, and enrollment history.
+              structure, classes, students, enrollment history, and
+              attendance.
             </p>
           </div>
 
@@ -77,9 +84,9 @@ export default async function SchoolHome() {
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Academic periods, academic structure, classes, students, and
-              enrollments are available according to the organization&apos;s
-              permissions.
+              Academic periods, academic structure, classes, students,
+              enrollments, and attendance are available according to the
+              organization&apos;s permissions.
             </p>
           </div>
 
@@ -89,8 +96,8 @@ export default async function SchoolHome() {
             <p className="mt-2 text-2xl font-bold">Student Lifecycle</p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Student identity now connects to enrollment, class placement,
-              and academic-period history.
+              Student identity connects to enrollment, class placement,
+              academic-period history, and daily attendance.
             </p>
           </div>
         </section>
@@ -106,8 +113,9 @@ export default async function SchoolHome() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              Establish the academic structure first, then connect students
-              and enrollment history to that controlled foundation.
+              Establish the academic structure first, then connect students,
+              enrollment history, and attendance to that controlled
+              foundation.
             </p>
           </div>
 
@@ -130,7 +138,7 @@ export default async function SchoolHome() {
               </p>
 
               <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
-                Open module →
+                Open module &gt;
               </p>
             </Link>
 
@@ -152,7 +160,7 @@ export default async function SchoolHome() {
               </p>
 
               <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
-                Open module →
+                Open module &gt;
               </p>
             </Link>
 
@@ -174,7 +182,7 @@ export default async function SchoolHome() {
               </p>
 
               <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
-                Open module →
+                Open module &gt;
               </p>
             </Link>
 
@@ -197,7 +205,7 @@ export default async function SchoolHome() {
                 </p>
 
                 <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-emerald-300">
-                  Open module →
+                  Open module &gt;
                 </p>
               </Link>
             )}
@@ -221,7 +229,32 @@ export default async function SchoolHome() {
                 </p>
 
                 <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-emerald-300">
-                  Open module →
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
+
+            {canReadAttendance && (
+              <Link
+                href="/school/attendance"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-amber-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-400">
+                  Student Lifecycle
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-amber-200">
+                  Attendance
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Record daily attendance against canonical student
+                  enrollments while preserving class and academic-period
+                  context.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-amber-300">
+                  Open module &gt;
                 </p>
               </Link>
             )}
@@ -236,13 +269,14 @@ export default async function SchoolHome() {
               </p>
 
               <h2 className="mt-2 text-2xl font-bold">
-                Admission → Student → Enrollment
+                Admission &gt; Student &gt; Enrollment &gt; Attendance
               </h2>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                The current operating chain establishes a master student
-                record first, then connects that student to a class and
-                academic period through a historical enrollment record.
+                The operating chain establishes a master student record,
+                connects that student to a class and academic period through a
+                historical enrollment record, then records daily attendance
+                against that canonical enrollment context.
               </p>
             </div>
 
@@ -252,11 +286,11 @@ export default async function SchoolHome() {
               </p>
 
               <p className="mt-2 font-semibold text-emerald-300">
-                Foundation operational
+                Attendance operational
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Student and enrollment surfaces are live.
+                Student, enrollment, and attendance surfaces are live.
               </p>
             </div>
           </div>
@@ -280,7 +314,7 @@ export default async function SchoolHome() {
             </p>
 
             <p className="mt-4 text-sm font-semibold text-emerald-400">
-              Open Control Plane →
+              Open Control Plane &gt;
             </p>
           </Link>
 
@@ -302,7 +336,7 @@ export default async function SchoolHome() {
             </p>
 
             <p className="mt-4 text-sm font-semibold text-emerald-400">
-              Open Configuration →
+              Open Configuration &gt;
             </p>
           </Link>
         </section>
