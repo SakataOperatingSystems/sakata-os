@@ -10,6 +10,9 @@ export default async function SchoolHome() {
 
   const { organization } = await getOrganizationContext();
 
+  const canReadAdmissions = await hasPermission(
+    "school.admission_requests.read"
+  );
   const canReadStudents = await hasPermission("school.students.read");
   const canReadEnrollments = await hasPermission(
     "school.enrollments.read"
@@ -20,6 +23,7 @@ export default async function SchoolHome() {
 
   const visibleOperatingSurfaces =
     3 +
+    (canReadAdmissions ? 1 : 0) +
     (canReadStudents ? 1 : 0) +
     (canReadEnrollments ? 1 : 0) +
     (canReadAttendance ? 1 : 0);
@@ -31,7 +35,7 @@ export default async function SchoolHome() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-sky-400">
-                SAKATA Operating Systems · Operating Application
+                SAKATA Operating Systems - Operating Application
               </p>
 
               <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
@@ -69,8 +73,8 @@ export default async function SchoolHome() {
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
               The School OS foundation connects academic periods, normalized
-              structure, classes, students, enrollment history, and
-              attendance.
+              structure, classes, students, admission requests, enrollment
+              history, and attendance.
             </p>
           </div>
 
@@ -84,9 +88,9 @@ export default async function SchoolHome() {
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Academic periods, academic structure, classes, students,
-              enrollments, and attendance are available according to the
-              organization&apos;s permissions.
+              Academic periods, academic structure, classes, admissions,
+              students, enrollments, and attendance are available according
+              to the organization's permissions.
             </p>
           </div>
 
@@ -96,8 +100,9 @@ export default async function SchoolHome() {
             <p className="mt-2 text-2xl font-bold">Student Lifecycle</p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Student identity connects to enrollment, class placement,
-              academic-period history, and daily attendance.
+              Admission requests can enter a controlled workflow before
+              becoming canonical student records, followed by enrollment,
+              class placement, and attendance.
             </p>
           </div>
         </section>
@@ -113,9 +118,9 @@ export default async function SchoolHome() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              Establish the academic structure first, then connect students,
-              enrollment history, and attendance to that controlled
-              foundation.
+              Establish the academic structure first, then connect admission
+              requests, students, enrollment history, and attendance to that
+              controlled foundation.
             </p>
           </div>
 
@@ -151,12 +156,12 @@ export default async function SchoolHome() {
               </p>
 
               <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
-                Education & Class Levels
+                Education &amp; Class Levels
               </h3>
 
               <p className="mt-3 text-sm leading-6 text-slate-400">
                 Define the education levels and class levels that form the
-                school&apos;s academic hierarchy.
+                school's academic hierarchy.
               </p>
 
               <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
@@ -185,6 +190,31 @@ export default async function SchoolHome() {
                 Open module &gt;
               </p>
             </Link>
+
+            {canReadAdmissions && (
+              <Link
+                href="/school/admissions"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-violet-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-400">
+                  Student Lifecycle
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-violet-200">
+                  Admissions
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Capture admission requests and move applicants through the
+                  controlled admission workflow before canonical student
+                  creation.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-violet-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
 
             {canReadStudents && (
               <Link
@@ -273,10 +303,10 @@ export default async function SchoolHome() {
               </h2>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                The operating chain establishes a master student record,
-                connects that student to a class and academic period through a
-                historical enrollment record, then records daily attendance
-                against that canonical enrollment context.
+                Admission requests enter a controlled workflow before the
+                canonical student record is created. Students then connect to
+                classes and academic periods through enrollment history, with
+                daily attendance recorded against that canonical context.
               </p>
             </div>
 
@@ -286,11 +316,12 @@ export default async function SchoolHome() {
               </p>
 
               <p className="mt-2 font-semibold text-emerald-300">
-                Attendance operational
+                Admission workflow operational
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Student, enrollment, and attendance surfaces are live.
+                Admissions, student, enrollment, and attendance surfaces are
+                live.
               </p>
             </div>
           </div>
@@ -332,7 +363,7 @@ export default async function SchoolHome() {
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Inspect and manage the effective configuration of the
-              organization&apos;s active product modules.
+              organization's active product modules.
             </p>
 
             <p className="mt-4 text-sm font-semibold text-emerald-400">
@@ -342,7 +373,7 @@ export default async function SchoolHome() {
         </section>
 
         <footer className="mt-10 border-t border-slate-800 pt-6 text-sm text-slate-500">
-          SAKATA Operating Systems · School OS · {organization.name}
+          SAKATA Operating Systems - School OS - {organization.name}
         </footer>
       </div>
     </main>

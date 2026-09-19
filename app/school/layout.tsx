@@ -12,6 +12,10 @@ export default async function SchoolLayout({
 
   const { organization } = await getOrganizationContext();
 
+  const canReadAdmissions = await hasPermission(
+    "school.admission_requests.read"
+  );
+
   const canReadStudents = await hasPermission(
     "school.students.read"
   );
@@ -67,6 +71,15 @@ export default async function SchoolLayout({
             >
               Academic Periods
             </Link>
+
+            {canReadAdmissions && (
+              <Link
+                href="/school/admissions"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Admissions
+              </Link>
+            )}
 
             {canReadStudents && (
               <Link
