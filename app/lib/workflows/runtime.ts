@@ -10,6 +10,12 @@ export type CreateWorkflowInstanceInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type ExecuteWorkflowTransitionInput = {
+  workflowInstanceId: string;
+  workflowTransitionId: string;
+  metadata?: Record<string, unknown>;
+};
+
 export type WorkflowInstance = {
   id: string;
   organization_id: string;
@@ -23,6 +29,14 @@ export type WorkflowInstance = {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+};
+
+export type WorkflowTransitionExecutionResult = {
+  workflow_instance_id: string;
+  workflow_transition_history_id: string;
+  current_state_id: string;
+  status: "active" | "completed" | "cancelled";
+  completed_at: string | null;
 };
 
 export async function createWorkflowInstance(
@@ -116,4 +130,49 @@ export async function createWorkflowInstance(
   }
 
   return data as WorkflowInstance;
+}
+
+export async function executeWorkflowTransition(
+  input: ExecuteWorkflowTransitionInput
+): Promise<WorkflowTransitionExecutionResult> {
+  await requirePermission("core.workflows.manage");
+
+  const { organizationId } = await getOrganizationContext();
+
+  const supabase = await createClient();
+
+  const workflowInstanceId = input.workflowInstanceId.trim();
+  const workflowTransitionId = input.workflowTransitionId.trim();
+
+  if (!workflowInstanceId) {
+    throw new Error("Workflow instance ID is required.");
+  }
+
+  if (!workflowTransitionId) {
+    throw new Error("Workflow transition ID is required.");
+  }
+
+  const metadata = input.metadata ?? {};
+
+  const { data, error } = await supabase.rpc(
+    "execute_workflow_transition",
+    {
+      p_organization_id: organizationId,
+      p_workflow_instance_id: workflowInstanceId,
+      p_workflow_transition_id: workflowTransitionId,
+      p_metadata: metadata,
+    }
+  );
+
+  if (error) {
+    throw new Error(`Failed to execute workflow transition: ${error.message}`);
+  }
+
+  if (!data || data.length !== 1) {
+    throw new Error(
+      "Workflow transition executed but returned an unexpected result."
+    );
+  }
+
+  return data[0] as WorkflowTransitionExecutionResult;
 }

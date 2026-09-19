@@ -1,9 +1,10 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { requirePermission } from "@/app/lib/auth/authorization";
+import { executeWorkflowTransition } from "@/app/lib/workflows/runtime";
 import { validateAdmissionRequestInput } from "./validation";
 
 export type AdmissionRequestActionState = {
@@ -13,7 +14,7 @@ export type AdmissionRequestActionState = {
 
 function getErrorMessage(
   error: { code?: string; message?: string } | unknown,
-  operation: "create" | "update"
+  operation: "create" | "update" | "transition"
 ): string {
   if (
     typeof error === "object" &&
@@ -44,6 +45,10 @@ function getErrorMessage(
     typeof error.message === "string"
   ) {
     return error.message;
+  }
+
+  if (operation === "transition") {
+    return "Failed to execute the admission workflow transition.";
   }
 
   return `Failed to ${operation} admission request.`;
@@ -197,5 +202,47 @@ export async function updateAdmissionRequest(
       success: false,
       error: getErrorMessage(error, "update"),
     };
+  }
+}
+
+export async function submitAdmissionForReview(
+  formData: FormData
+): Promise<void> {
+  try {
+    await requirePermission(
+      "school.admission_requests.manage"
+    );
+
+    const workflowInstanceId = String(
+      formData.get("workflow_instance_id") ?? ""
+    ).trim();
+
+    const workflowTransitionId = String(
+      formData.get("workflow_transition_id") ?? ""
+    ).trim();
+
+    if (!workflowInstanceId) {
+      throw new Error("Workflow instance ID is required.");
+    }
+
+    if (!workflowTransitionId) {
+      throw new Error("Workflow transition ID is required.");
+    }
+
+    await executeWorkflowTransition({
+      workflowInstanceId,
+      workflowTransitionId,
+      metadata: {
+        source: "student_admissions",
+        action: "submit_for_review",
+      },
+    });
+
+    revalidatePath("/school");
+    revalidatePath("/school/admissions");
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "transition")
+    );
   }
 }
