@@ -1,130 +1,114 @@
-﻿"use client";
+"use client";
 
 import { useActionState } from "react";
-import { createWorkflowDefinition } from "./actions";
+import {
+  createWorkflowDefinition,
+  createWorkflowState,
+  createWorkflowTransition,
+} from "./actions";
 
-const initialState = {
+type WorkflowStateOption = {
+  id: string;
+  code: string;
+  name: string;
+  sequence: number;
+  is_initial: boolean;
+  is_terminal: boolean;
+};
+
+type WorkflowTransitionFormProps = {
+  workflowDefinitionId: string;
+  states: WorkflowStateOption[];
+};
+
+const initialDefinitionState = {
   success: false,
   error: null,
 };
 
-export default function WorkflowDefinitionForm() {
-  const [state, formAction, pending] = useActionState(
+const initialStateState = {
+  success: false,
+  error: null,
+};
+
+const initialTransitionState = {
+  success: false,
+  error: null,
+};
+
+export function WorkflowDefinitionForm() {
+  const [state, formAction] = useActionState(
     createWorkflowDefinition,
-    initialState
+    initialDefinitionState
   );
 
   return (
-    <form
-      action={formAction}
-      className="space-y-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-6"
-    >
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
-          Create Workflow Definition
-        </p>
-
-        <h2 className="mt-2 text-xl font-semibold text-slate-100">
-          Define a governed operational lifecycle
-        </h2>
-
-        <p className="mt-1 text-sm leading-6 text-slate-500">
-          Create the reusable workflow definition first. States and
-          transitions will be configured as separate controlled layers.
-        </p>
-      </div>
-
-      {state.error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
-          <p className="text-sm font-medium text-red-300">
-            {state.error}
-          </p>
-        </div>
-      )}
-
-      {state.success && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-          <p className="text-sm font-medium text-emerald-300">
-            Workflow definition created successfully.
-          </p>
-        </div>
-      )}
-
+    <form action={formAction} className="space-y-4">
       <div>
         <label
-          htmlFor="workflow-code"
-          className="block text-sm font-medium text-slate-300"
+          htmlFor="workflow-definition-code"
+          className="block text-sm font-medium"
         >
-          Code
+          Workflow code
         </label>
-
         <input
-          id="workflow-code"
+          id="workflow-definition-code"
           name="code"
           type="text"
           required
           maxLength={100}
-          pattern="[a-z0-9][a-z0-9._-]*"
-          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-emerald-500"
-          placeholder="e.g. student_admission"
+          placeholder="student_admission"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
         />
-
-        <p className="mt-2 text-xs leading-5 text-slate-500">
-          Stable organization-scoped identifier. Use lowercase letters,
-          numbers, dots, underscores, or hyphens.
-        </p>
       </div>
 
       <div>
         <label
-          htmlFor="workflow-name"
-          className="block text-sm font-medium text-slate-300"
+          htmlFor="workflow-definition-name"
+          className="block text-sm font-medium"
         >
-          Name
+          Workflow name
         </label>
-
         <input
-          id="workflow-name"
+          id="workflow-definition-name"
           name="name"
           type="text"
           required
           maxLength={200}
-          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
-          placeholder="e.g. Student Admission"
+          placeholder="Student Admission"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
 
       <div>
         <label
-          htmlFor="workflow-description"
-          className="block text-sm font-medium text-slate-300"
+          htmlFor="workflow-definition-description"
+          className="block text-sm font-medium"
         >
           Description
         </label>
-
         <textarea
-          id="workflow-description"
+          id="workflow-definition-description"
           name="description"
-          rows={4}
+          rows={3}
           maxLength={5000}
-          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
-          placeholder="Describe the operational lifecycle this workflow governs."
+          placeholder="Describe the controlled lifecycle."
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
 
       <div>
         <label
-          htmlFor="workflow-status"
-          className="block text-sm font-medium text-slate-300"
+          htmlFor="workflow-definition-status"
+          className="block text-sm font-medium"
         >
           Status
         </label>
-
         <select
-          id="workflow-status"
+          id="workflow-definition-status"
           name="status"
           defaultValue="active"
-          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
         >
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -132,12 +116,292 @@ export default function WorkflowDefinitionForm() {
         </select>
       </div>
 
+      {state.error ? (
+        <p className="text-sm text-red-600">{state.error}</p>
+      ) : null}
+
+      {state.success ? (
+        <p className="text-sm text-green-600">
+          Workflow definition created successfully.
+        </p>
+      ) : null}
+
       <button
         type="submit"
-        disabled={pending}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
       >
-        {pending ? "Creating..." : "Create Workflow Definition"}
+        Create workflow
+      </button>
+    </form>
+  );
+}
+
+export function WorkflowStateForm({
+  workflowDefinitionId,
+}: {
+  workflowDefinitionId: string;
+}) {
+  const [state, formAction] = useActionState(
+    createWorkflowState,
+    initialStateState
+  );
+
+  return (
+    <form action={formAction} className="space-y-4">
+      <input
+        type="hidden"
+        name="workflow_definition_id"
+        value={workflowDefinitionId}
+      />
+
+      <div>
+        <label className="block text-sm font-medium" htmlFor={`state-code-${workflowDefinitionId}`}>
+          State code
+        </label>
+        <input
+          id={`state-code-${workflowDefinitionId}`}
+          name="code"
+          type="text"
+          required
+          maxLength={100}
+          placeholder="admission_requested"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium" htmlFor={`state-name-${workflowDefinitionId}`}>
+          State name
+        </label>
+        <input
+          id={`state-name-${workflowDefinitionId}`}
+          name="name"
+          type="text"
+          required
+          maxLength={200}
+          placeholder="Admission Requested"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`state-description-${workflowDefinitionId}`}
+        >
+          Description
+        </label>
+        <textarea
+          id={`state-description-${workflowDefinitionId}`}
+          name="description"
+          rows={3}
+          maxLength={5000}
+          placeholder="Describe this state."
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`state-sequence-${workflowDefinitionId}`}
+        >
+          Sequence
+        </label>
+        <input
+          id={`state-sequence-${workflowDefinitionId}`}
+          name="sequence"
+          type="number"
+          min="0"
+          step="1"
+          required
+          defaultValue="0"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            name="is_initial"
+            type="checkbox"
+            value="true"
+          />
+          Initial state
+        </label>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            name="is_terminal"
+            type="checkbox"
+            value="true"
+          />
+          Terminal state
+        </label>
+      </div>
+
+      {state.error ? (
+        <p className="text-sm text-red-600">{state.error}</p>
+      ) : null}
+
+      {state.success ? (
+        <p className="text-sm text-green-600">
+          Workflow state created successfully.
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+      >
+        Create state
+      </button>
+    </form>
+  );
+}
+
+export function WorkflowTransitionForm({
+  workflowDefinitionId,
+  states,
+}: WorkflowTransitionFormProps) {
+  const [state, formAction] = useActionState(
+    createWorkflowTransition,
+    initialTransitionState
+  );
+
+  return (
+    <form action={formAction} className="space-y-4">
+      <input
+        type="hidden"
+        name="workflow_definition_id"
+        value={workflowDefinitionId}
+      />
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`transition-from-${workflowDefinitionId}`}
+        >
+          From state
+        </label>
+        <select
+          id={`transition-from-${workflowDefinitionId}`}
+          name="from_state_id"
+          required
+          defaultValue=""
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="" disabled>
+            Select starting state
+          </option>
+          {states.map((stateOption) => (
+            <option key={stateOption.id} value={stateOption.id}>
+              {stateOption.sequence}: {stateOption.name} ({stateOption.code})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`transition-to-${workflowDefinitionId}`}
+        >
+          To state
+        </label>
+        <select
+          id={`transition-to-${workflowDefinitionId}`}
+          name="to_state_id"
+          required
+          defaultValue=""
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="" disabled>
+            Select destination state
+          </option>
+          {states.map((stateOption) => (
+            <option key={stateOption.id} value={stateOption.id}>
+              {stateOption.sequence}: {stateOption.name} ({stateOption.code})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`transition-code-${workflowDefinitionId}`}
+        >
+          Transition code
+        </label>
+        <input
+          id={`transition-code-${workflowDefinitionId}`}
+          name="code"
+          type="text"
+          required
+          maxLength={100}
+          placeholder="submit_for_review"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`transition-name-${workflowDefinitionId}`}
+        >
+          Transition name
+        </label>
+        <input
+          id={`transition-name-${workflowDefinitionId}`}
+          name="name"
+          type="text"
+          required
+          maxLength={200}
+          placeholder="Submit for Review"
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label
+          className="block text-sm font-medium"
+          htmlFor={`transition-description-${workflowDefinitionId}`}
+        >
+          Description
+        </label>
+        <textarea
+          id={`transition-description-${workflowDefinitionId}`}
+          name="description"
+          rows={3}
+          maxLength={5000}
+          placeholder="Describe what this transition does."
+          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
+
+      {states.length < 2 ? (
+        <p className="text-sm text-amber-700">
+          Create at least two states before defining a transition.
+        </p>
+      ) : null}
+
+      {state.error ? (
+        <p className="text-sm text-red-600">{state.error}</p>
+      ) : null}
+
+      {state.success ? (
+        <p className="text-sm text-green-600">
+          Workflow transition created successfully.
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={states.length < 2}
+        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Create transition
       </button>
     </form>
   );

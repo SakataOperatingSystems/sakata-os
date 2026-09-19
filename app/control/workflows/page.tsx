@@ -1,7 +1,11 @@
-﻿import { requirePermission } from "@/app/lib/auth/authorization";
+import { requirePermission } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
-import WorkflowDefinitionForm from "./form";
+import {
+  WorkflowDefinitionForm,
+  WorkflowStateForm,
+  WorkflowTransitionForm,
+} from "./form";
 
 type WorkflowDefinition = {
   id: string;
@@ -379,6 +383,16 @@ export default async function WorkflowsPage() {
                                 No states configured yet.
                               </p>
                             )}
+
+                            <div className="mt-6 border-t border-slate-800 pt-5">
+                              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Add State
+                              </p>
+
+                              <WorkflowStateForm
+                                workflowDefinitionId={workflow.id}
+                              />
+                            </div>
                           </div>
 
                           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
@@ -408,7 +422,7 @@ export default async function WorkflowsPage() {
                                         transition.from_state_id
                                       ) ?? "Unknown state"}{" "}
                                       <span className="px-1 text-slate-600">
-                                        →
+                                        ?
                                       </span>{" "}
                                       {stateNames.get(
                                         transition.to_state_id
@@ -432,6 +446,17 @@ export default async function WorkflowsPage() {
                                 No transitions configured yet.
                               </p>
                             )}
+
+                            <div className="mt-6 border-t border-slate-800 pt-5">
+                              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Add Transition
+                              </p>
+
+                              <WorkflowTransitionForm
+                                workflowDefinitionId={workflow.id}
+                                states={workflowStates}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -455,7 +480,7 @@ export default async function WorkflowsPage() {
         </section>
 
         <footer className="mt-10 border-t border-slate-800 pt-6 text-sm text-slate-500">
-          SAKATA Operating Systems · Control Plane · Workflow / State
+          SAKATA Operating Systems - Control Plane - Workflow / State
         </footer>
       </div>
     </main>
