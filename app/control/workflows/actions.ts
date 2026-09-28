@@ -1,6 +1,7 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
@@ -377,4 +378,221 @@ export async function createWorkflowTransition(
       error: getErrorMessage(error, "create"),
     };
   }
+}
+export async function configureStudentAdmissionDecisionPath(): Promise<void> {
+  await requirePermission("core.workflows.manage");
+
+  const { organizationId } = await getOrganizationContext();
+  const supabase = await createClient();
+
+  const { data: workflow, error: workflowError } = await supabase
+    .from("workflow_definitions")
+    .select("id, code, name, status")
+    .eq("organization_id", organizationId)
+    .eq("code", "student_admission")
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (workflowError) {
+    throw new Error(
+      `Failed to load the student admission workflow: ${workflowError.message}`
+    );
+  }
+
+  if (!workflow) {
+    throw new Error(
+      "The active student_admission workflow is not configured for this organization."
+    );
+  }
+
+  const { data: states, error: statesError } = await supabase
+    .from("workflow_states")
+    .select(
+      "id, code, name, description, sequence, is_initial, is_terminal"
+    )
+    .eq("organization_id", organizationId)
+    .eq("workflow_definition_id", workflow.id)
+    .order("sequence");
+
+  if (statesError) {
+    throw new Error(
+      `Failed to load admission workflow states: ${statesError.message}`
+    );
+  }
+
+  const existingStates = states ?? [];
+
+  const reviewState = existingStates.find(
+    (state) => state.code === "admission_review"
+  );
+
+  const requestedState = existingStates.find(
+    (state) => state.code === "admission_requested"
+  );
+
+  if (!reviewState) {
+    throw new Error(
+      "The student admission workflow is missing the admission_review state."
+    );
+  }
+
+  if (!requestedState) {
+    throw new Error(
+      "The student admission workflow is missing the admission_requested state."
+    );
+  }
+
+  let nextSequence =
+    existingStates.reduce(
+      (maximum, state) => Math.max(maximum, state.sequence),
+      0
+    ) + 1;
+
+  const desiredStates = [
+    {
+      code: "admission_approved",
+      name: "Admission Approved",
+      description:
+        "Admission decision approved and ready for student conversion.",
+      is_initial: false,
+      is_terminal: false,
+    },
+    {
+      code: "admission_rejected",
+      name: "Admission Rejected",
+      description: "Admission decision rejected and closed.",
+      is_initial: false,
+      is_terminal: true,
+    },
+  ];
+
+  const stateByCode = new Map(
+    existingStates.map((state) => [state.code, state])
+  );
+
+  for (const desiredState of desiredStates) {
+    if (stateByCode.has(desiredState.code)) {
+      continue;
+    }
+
+    const { data: createdState, error: createStateError } = await supabase
+      .from("workflow_states")
+      .insert({
+        organization_id: organizationId,
+        workflow_definition_id: workflow.id,
+        code: desiredState.code,
+        name: desiredState.name,
+        description: desiredState.description,
+        sequence: nextSequence,
+        is_initial: desiredState.is_initial,
+        is_terminal: desiredState.is_terminal,
+      })
+      .select(
+        "id, code, name, description, sequence, is_initial, is_terminal"
+      )
+      .single();
+
+    if (createStateError) {
+      throw new Error(
+        `Failed to create ${desiredState.name}: ${createStateError.message}`
+      );
+    }
+
+    if (!createdState) {
+      throw new Error(
+        `Failed to confirm creation of ${desiredState.name}.`
+      );
+    }
+
+    stateByCode.set(createdState.code, createdState);
+    nextSequence += 1;
+  }
+
+  const approvedState = stateByCode.get("admission_approved");
+  const rejectedState = stateByCode.get("admission_rejected");
+
+  if (!approvedState || !rejectedState) {
+    throw new Error(
+      "Admission decision states could not be resolved after configuration."
+    );
+  }
+
+  const { data: existingTransitions, error: transitionsError } = await supabase
+    .from("workflow_transitions")
+    .select(
+      "id, from_state_id, to_state_id, code, name, description"
+    )
+    .eq("organization_id", organizationId)
+    .eq("workflow_definition_id", workflow.id);
+
+  if (transitionsError) {
+    throw new Error(
+      `Failed to load admission workflow transitions: ${transitionsError.message}`
+    );
+  }
+
+  const transitionByCode = new Map(
+    (existingTransitions ?? []).map((transition) => [
+      transition.code,
+      transition,
+    ])
+  );
+
+  const desiredTransitions = [
+    {
+      code: "approve_admission",
+      name: "Approve Admission",
+      description:
+        "Approve the application and move it to the student conversion stage.",
+      from_state_id: reviewState.id,
+      to_state_id: approvedState.id,
+    },
+    {
+      code: "reject_admission",
+      name: "Reject Admission",
+      description:
+        "Reject the application and close the admission workflow.",
+      from_state_id: reviewState.id,
+      to_state_id: rejectedState.id,
+    },
+    {
+      code: "request_admission_changes",
+      name: "Request Changes",
+      description:
+        "Return the application to the requested state for additional information or correction.",
+      from_state_id: reviewState.id,
+      to_state_id: requestedState.id,
+    },
+  ];
+
+  for (const desiredTransition of desiredTransitions) {
+    if (transitionByCode.has(desiredTransition.code)) {
+      continue;
+    }
+
+    const { error: createTransitionError } = await supabase
+      .from("workflow_transitions")
+      .insert({
+        organization_id: organizationId,
+        workflow_definition_id: workflow.id,
+        from_state_id: desiredTransition.from_state_id,
+        to_state_id: desiredTransition.to_state_id,
+        code: desiredTransition.code,
+        name: desiredTransition.name,
+        description: desiredTransition.description,
+      });
+
+    if (createTransitionError) {
+      throw new Error(
+        `Failed to create ${desiredTransition.name}: ${createTransitionError.message}`
+      );
+    }
+  }
+
+  revalidatePath("/control/workflows");
+  revalidatePath("/control/workflows/admission-setup");
+  revalidatePath("/school");
+  revalidatePath("/school/admissions");
+
+  redirect("/control/workflows/admission-setup?configured=1");
 }

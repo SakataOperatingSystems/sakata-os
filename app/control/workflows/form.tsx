@@ -36,6 +36,21 @@ const initialTransitionState = {
   error: null,
 };
 
+const fieldClassName =
+  "mt-1 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-slate-500";
+
+const selectClassName =
+  "mt-1 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500";
+
+const buttonClassName =
+  "inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/30";
+
+const disabledButtonClassName =
+  "disabled:cursor-not-allowed disabled:opacity-50";
+
+const labelClassName =
+  "mb-2 block text-sm font-medium text-slate-300";
+
 export function WorkflowDefinitionForm() {
   const [state, formAction] = useActionState(
     createWorkflowDefinition,
@@ -43,11 +58,11 @@ export function WorkflowDefinitionForm() {
   );
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-5">
       <div>
         <label
           htmlFor="workflow-definition-code"
-          className="block text-sm font-medium"
+          className={labelClassName}
         >
           Workflow code
         </label>
@@ -58,14 +73,14 @@ export function WorkflowDefinitionForm() {
           required
           maxLength={100}
           placeholder="student_admission"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
         <label
           htmlFor="workflow-definition-name"
-          className="block text-sm font-medium"
+          className={labelClassName}
         >
           Workflow name
         </label>
@@ -76,14 +91,14 @@ export function WorkflowDefinitionForm() {
           required
           maxLength={200}
           placeholder="Student Admission"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
         <label
           htmlFor="workflow-definition-description"
-          className="block text-sm font-medium"
+          className={labelClassName}
         >
           Description
         </label>
@@ -93,14 +108,14 @@ export function WorkflowDefinitionForm() {
           rows={3}
           maxLength={5000}
           placeholder="Describe the controlled lifecycle."
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={`${fieldClassName} resize-y`}
         />
       </div>
 
       <div>
         <label
           htmlFor="workflow-definition-status"
-          className="block text-sm font-medium"
+          className={labelClassName}
         >
           Status
         </label>
@@ -108,7 +123,7 @@ export function WorkflowDefinitionForm() {
           id="workflow-definition-status"
           name="status"
           defaultValue="active"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={selectClassName}
         >
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -117,19 +132,24 @@ export function WorkflowDefinitionForm() {
       </div>
 
       {state.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
+        <p
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {state.error}
+        </p>
       ) : null}
 
       {state.success ? (
-        <p className="text-sm text-green-600">
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
           Workflow definition created successfully.
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
-      >
+      <button type="submit" className={buttonClassName}>
         Create workflow
       </button>
     </form>
@@ -147,7 +167,7 @@ export function WorkflowStateForm({
   );
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-5">
       <input
         type="hidden"
         name="workflow_definition_id"
@@ -155,7 +175,10 @@ export function WorkflowStateForm({
       />
 
       <div>
-        <label className="block text-sm font-medium" htmlFor={`state-code-${workflowDefinitionId}`}>
+        <label
+          className={labelClassName}
+          htmlFor={`state-code-${workflowDefinitionId}`}
+        >
           State code
         </label>
         <input
@@ -165,12 +188,15 @@ export function WorkflowStateForm({
           required
           maxLength={100}
           placeholder="admission_requested"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium" htmlFor={`state-name-${workflowDefinitionId}`}>
+        <label
+          className={labelClassName}
+          htmlFor={`state-name-${workflowDefinitionId}`}
+        >
           State name
         </label>
         <input
@@ -180,13 +206,13 @@ export function WorkflowStateForm({
           required
           maxLength={200}
           placeholder="Admission Requested"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`state-description-${workflowDefinitionId}`}
         >
           Description
@@ -197,13 +223,13 @@ export function WorkflowStateForm({
           rows={3}
           maxLength={5000}
           placeholder="Describe this state."
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={`${fieldClassName} resize-y`}
         />
       </div>
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`state-sequence-${workflowDefinitionId}`}
         >
           Sequence
@@ -216,44 +242,51 @@ export function WorkflowStateForm({
           step="1"
           required
           defaultValue="0"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm">
+      <div className="flex flex-wrap gap-5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
           <input
             name="is_initial"
             type="checkbox"
             value="true"
+            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
           />
           Initial state
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
           <input
             name="is_terminal"
             type="checkbox"
             value="true"
+            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
           />
           Terminal state
         </label>
       </div>
 
       {state.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
+        <p
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {state.error}
+        </p>
       ) : null}
 
       {state.success ? (
-        <p className="text-sm text-green-600">
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
           Workflow state created successfully.
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
-      >
+      <button type="submit" className={buttonClassName}>
         Create state
       </button>
     </form>
@@ -270,7 +303,7 @@ export function WorkflowTransitionForm({
   );
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-5">
       <input
         type="hidden"
         name="workflow_definition_id"
@@ -279,7 +312,7 @@ export function WorkflowTransitionForm({
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`transition-from-${workflowDefinitionId}`}
         >
           From state
@@ -289,7 +322,7 @@ export function WorkflowTransitionForm({
           name="from_state_id"
           required
           defaultValue=""
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={selectClassName}
         >
           <option value="" disabled>
             Select starting state
@@ -304,7 +337,7 @@ export function WorkflowTransitionForm({
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`transition-to-${workflowDefinitionId}`}
         >
           To state
@@ -314,7 +347,7 @@ export function WorkflowTransitionForm({
           name="to_state_id"
           required
           defaultValue=""
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={selectClassName}
         >
           <option value="" disabled>
             Select destination state
@@ -329,7 +362,7 @@ export function WorkflowTransitionForm({
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`transition-code-${workflowDefinitionId}`}
         >
           Transition code
@@ -341,13 +374,13 @@ export function WorkflowTransitionForm({
           required
           maxLength={100}
           placeholder="submit_for_review"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`transition-name-${workflowDefinitionId}`}
         >
           Transition name
@@ -359,13 +392,13 @@ export function WorkflowTransitionForm({
           required
           maxLength={200}
           placeholder="Submit for Review"
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
         />
       </div>
 
       <div>
         <label
-          className="block text-sm font-medium"
+          className={labelClassName}
           htmlFor={`transition-description-${workflowDefinitionId}`}
         >
           Description
@@ -376,22 +409,30 @@ export function WorkflowTransitionForm({
           rows={3}
           maxLength={5000}
           placeholder="Describe what this transition does."
-          className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
+          className={`${fieldClassName} resize-y`}
         />
       </div>
 
       {states.length < 2 ? (
-        <p className="text-sm text-amber-700">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           Create at least two states before defining a transition.
         </p>
       ) : null}
 
       {state.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
+        <p
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {state.error}
+        </p>
       ) : null}
 
       {state.success ? (
-        <p className="text-sm text-green-600">
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
           Workflow transition created successfully.
         </p>
       ) : null}
@@ -399,7 +440,7 @@ export function WorkflowTransitionForm({
       <button
         type="submit"
         disabled={states.length < 2}
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className={`${buttonClassName} ${disabledButtonClassName}`}
       >
         Create transition
       </button>

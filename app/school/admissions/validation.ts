@@ -1,4 +1,4 @@
-﻿const ADMISSION_REQUEST_STATUSES = [
+const ADMISSION_REQUEST_STATUSES = [
   "open",
   "approved",
   "rejected",
@@ -19,7 +19,6 @@ export type AdmissionGender =
   (typeof ADMISSION_GENDERS)[number];
 
 export interface AdmissionRequestInput {
-  admissionRequestId: string;
   applicantName: string;
   applicantGender: AdmissionGender | null;
   applicantDateOfBirth: string | null;
@@ -64,10 +63,6 @@ function validateOptionalDate(
 export function validateAdmissionRequestInput(
   formData: FormData
 ): AdmissionRequestInput {
-  const admissionRequestId = String(
-    formData.get("admission_request_id") ?? ""
-  ).trim();
-
   const applicantName = String(
     formData.get("applicant_name") ?? ""
   ).trim();
@@ -93,16 +88,6 @@ export function validateAdmissionRequestInput(
   );
 
   const notes = rawNotes.trim();
-
-  if (!admissionRequestId) {
-    throw new Error("Admission request ID is required.");
-  }
-
-  if (admissionRequestId.length > 100) {
-    throw new Error(
-      "Admission request ID must be 100 characters or fewer."
-    );
-  }
 
   if (!applicantName) {
     throw new Error("Applicant name is required.");
@@ -152,7 +137,6 @@ export function validateAdmissionRequestInput(
   }
 
   return {
-    admissionRequestId,
     applicantName,
     applicantGender: rawGender
       ? (rawGender as AdmissionGender)
@@ -163,3 +147,61 @@ export function validateAdmissionRequestInput(
     notes: notes || null,
   };
 }
+
+export type AdmissionOperatorException =
+  | "missing_date_of_birth"
+  | "missing_requested_admission_date"
+  | "no_active_workflow";
+
+export type AdmissionOperatorState = {
+  nextAction: string;
+  exceptions: AdmissionOperatorException[];
+};
+
+export function getAdmissionOperatorState(input: {
+  status: AdmissionRequestStatus;
+  applicantDateOfBirth: string | null;
+  requestedAdmissionDate: string | null;
+  workflowStateCode: string | null;
+  workflowTransitionName: string | null;
+}): AdmissionOperatorState {
+  const exceptions: AdmissionOperatorException[] = [];
+
+  if (input.status === "open") {
+    if (!input.applicantDateOfBirth) {
+      exceptions.push("missing_date_of_birth");
+    }
+
+    if (!input.requestedAdmissionDate) {
+      exceptions.push("missing_requested_admission_date");
+    }
+
+    if (!input.workflowStateCode) {
+      exceptions.push("no_active_workflow");
+    }
+  }
+
+  let nextAction = "Closed";
+
+  if (input.status === "approved") {
+    nextAction = "Convert to Student";
+  } else if (input.status === "open" && input.workflowTransitionName) {
+    nextAction = input.workflowTransitionName;
+  } else if (input.status === "open") {
+    nextAction = "Review admission";
+  }
+
+  return {
+    nextAction,
+    exceptions,
+  };
+}
+
+export const ADMISSION_OPERATOR_EXCEPTION_LABELS: Record<
+  AdmissionOperatorException,
+  string
+> = {
+  missing_date_of_birth: "Missing date of birth",
+  missing_requested_admission_date: "Missing requested date",
+  no_active_workflow: "No active workflow",
+};

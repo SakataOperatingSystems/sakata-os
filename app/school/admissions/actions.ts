@@ -22,7 +22,7 @@ function getErrorMessage(
     "code" in error &&
     error.code === "23505"
   ) {
-    return "An admission request with this ID already exists in this organization.";
+    return "The admission request conflicts with an existing record.";
   }
 
   if (
@@ -69,7 +69,6 @@ export async function createAdmissionRequest(
     const supabase = await createClient();
 
     const {
-      admissionRequestId,
       applicantName,
       applicantGender,
       applicantDateOfBirth,
@@ -82,7 +81,6 @@ export async function createAdmissionRequest(
       "create_student_admission_with_workflow",
       {
         p_organization_id: organizationId,
-        p_admission_request_id: admissionRequestId,
         p_applicant_name: applicantName,
         p_applicant_gender: applicantGender,
         p_applicant_date_of_birth: applicantDateOfBirth,
@@ -142,7 +140,6 @@ export async function updateAdmissionRequest(
     }
 
     const {
-      admissionRequestId,
       applicantName,
       applicantGender,
       applicantDateOfBirth,
@@ -154,7 +151,6 @@ export async function updateAdmissionRequest(
     const { data, error } = await supabase
       .from("student_admission_requests")
       .update({
-        admission_request_id: admissionRequestId,
         applicant_name: applicantName,
         applicant_gender: applicantGender,
         applicant_date_of_birth: applicantDateOfBirth,
@@ -202,6 +198,58 @@ export async function updateAdmissionRequest(
       success: false,
       error: getErrorMessage(error, "update"),
     };
+  }
+}
+
+export async function executeAdmissionWorkflowTransition(
+  formData: FormData
+): Promise<void> {
+  try {
+    await requirePermission(
+      "school.admission_requests.manage"
+    );
+
+    const workflowInstanceId = String(
+      formData.get("workflow_instance_id") ?? ""
+    ).trim();
+
+    const workflowTransitionId = String(
+      formData.get("workflow_transition_id") ?? ""
+    ).trim();
+
+    const transitionCode = String(
+      formData.get("workflow_transition_code") ?? ""
+    ).trim();
+
+    if (!workflowInstanceId) {
+      throw new Error(
+        "Workflow instance ID is required."
+      );
+    }
+
+    if (!workflowTransitionId) {
+      throw new Error(
+        "Workflow transition ID is required."
+      );
+    }
+
+    await executeWorkflowTransition({
+      workflowInstanceId,
+      workflowTransitionId,
+      metadata: {
+        source: "student_admissions",
+        action:
+          transitionCode ||
+          "admission_workflow_transition",
+      },
+    });
+
+    revalidatePath("/school");
+    revalidatePath("/school/admissions");
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "transition")
+    );
   }
 }
 

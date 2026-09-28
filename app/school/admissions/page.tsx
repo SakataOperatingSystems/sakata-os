@@ -7,10 +7,15 @@ import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
 import {
   createAdmissionRequest,
+  executeAdmissionWorkflowTransition,
   submitAdmissionForReview,
   updateAdmissionRequest,
 } from "./actions";
 import AdmissionForm from "./form";
+import {
+  ADMISSION_OPERATOR_EXCEPTION_LABELS,
+  getAdmissionOperatorState,
+} from "./validation";
 import type {
   AdmissionGender,
   AdmissionRequestStatus,
@@ -45,15 +50,30 @@ type WorkflowRuntimeRow = {
   workflow_transition_id: string | null;
   transition_code: string | null;
   transition_name: string | null;
+  transitions: Array<{
+    id: string;
+    code: string;
+    name: string;
+  }>;
 };
 
-export default async function AdmissionsPage() {
+export default async function AdmissionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    admission?: string;
+  }>;
+}) {
   await requirePermission(
     "school.admission_requests.read"
   );
 
   const { organization } =
     await getOrganizationContext();
+
+  const resolvedSearchParams = await searchParams;
+  const selectedAdmissionId =
+    resolvedSearchParams.admission ?? null;
 
   const canManage = await hasPermission(
     "school.admission_requests.manage"
@@ -179,8 +199,15 @@ export default async function AdmissionsPage() {
       (typeof transitions)[number]
     >();
 
+    const transitionsByInstance = new Map<
+      string,
+      Array<(typeof transitions)[number]>
+    >();
+
     for (const instance of instanceRows) {
-      const transition = (transitions ?? []).find(
+      const matchingTransitions = (
+        transitions ?? []
+      ).filter(
         (item) =>
           item.workflow_definition_id ===
             instance.workflow_definition_id &&
@@ -188,10 +215,19 @@ export default async function AdmissionsPage() {
             instance.current_state_id
       );
 
+      const transition = matchingTransitions[0];
+
       if (transition) {
         transitionByInstance.set(
           instance.id,
           transition
+        );
+      }
+
+      if (matchingTransitions.length > 0) {
+        transitionsByInstance.set(
+          instance.id,
+          matchingTransitions
         );
       }
     }
@@ -209,6 +245,9 @@ export default async function AdmissionsPage() {
         instance.id
       );
 
+      const instanceTransitions =
+        transitionsByInstance.get(instance.id) ?? [];
+
       workflowRuntimeByAdmissionId.set(
         instance.subject_id,
         {
@@ -224,10 +263,45 @@ export default async function AdmissionsPage() {
             transition?.code ?? null,
           transition_name:
             transition?.name ?? null,
+          transitions: instanceTransitions.map(
+            (item) => ({
+              id: item.id,
+              code: item.code,
+              name: item.name,
+            })
+          ),
         }
       );
     }
   }
+
+  const selectedAdmission =
+    requests?.find(
+      (item) => item.id === selectedAdmissionId
+    ) ?? null;
+
+  const selectedWorkflow =
+    selectedAdmission
+      ? workflowRuntimeByAdmissionId.get(
+          selectedAdmission.id
+        ) ?? null
+      : null;
+
+  const selectedOperatorState =
+    selectedAdmission
+      ? getAdmissionOperatorState({
+          status:
+            selectedAdmission.status as AdmissionRequestStatus,
+          applicantDateOfBirth:
+            selectedAdmission.applicant_date_of_birth,
+          requestedAdmissionDate:
+            selectedAdmission.requested_admission_date,
+          workflowStateCode:
+            selectedWorkflow?.current_state_code ?? null,
+          workflowTransitionName:
+            selectedWorkflow?.transition_name ?? null,
+        })
+      : null;
 
   const totalCount = requests?.length ?? 0;
 
@@ -262,6 +336,15 @@ export default async function AdmissionsPage() {
               Student Admissions
             </h1>
 
+<div className="mt-4">
+  <a
+  href="/school/admissions/convert"
+  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
+>
+  Convert Admissions
+</a>
+</div>
+
             <p className="mt-2 max-w-2xl text-sm text-slate-400">
               Capture and manage student admission requests
               before they become canonical student records.
@@ -275,6 +358,94 @@ export default async function AdmissionsPage() {
               : "admission requests"}
           </div>
         </div>
+
+        {selectedAdmission && selectedOperatorState && (
+          <section
+            id="admission-review"
+            className="mb-8 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-6"
+          >
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                  Admission review
+                </p>
+
+                <h2 className="mt-2 text-2xl font-semibold text-white">
+                  {selectedAdmission.applicant_name}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-400">
+                  {selectedAdmission.admission_request_id}
+                </p>
+              </div>
+
+              <Link
+                href="/school/admissions"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                Clear review
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-4">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-wider text-slate-500">
+                  Status
+                </p>
+                <p className="mt-2 font-semibold text-white">
+                  {selectedAdmission.status}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-wider text-slate-500">
+                  Workflow state
+                </p>
+                <p className="mt-2 font-semibold text-white">
+                  {selectedWorkflow?.current_state_name ??
+                    "No active workflow"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-wider text-slate-500">
+                  Next action
+                </p>
+                <p className="mt-2 font-semibold text-emerald-300">
+                  {selectedOperatorState.nextAction}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-wider text-slate-500">
+                  Exceptions
+                </p>
+                <p className="mt-2 font-semibold text-amber-300">
+                  {selectedOperatorState.exceptions.length}
+                </p>
+              </div>
+            </div>
+
+            {selectedOperatorState.exceptions.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {selectedOperatorState.exceptions.map(
+                  (exception) => (
+                    <span
+                      key={exception}
+                      className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300"
+                    >
+                      {
+                        ADMISSION_OPERATOR_EXCEPTION_LABELS[
+                          exception
+                        ]
+                      }
+                    </span>
+                  )
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         <div className="mb-8 grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
@@ -371,6 +542,9 @@ export default async function AdmissionsPage() {
                       Workflow
                     </th>
                     <th className="px-6 py-4 font-medium">
+                      Next action
+                    </th>
+                    <th className="px-6 py-4 font-medium">
                       Action
                     </th>
                   </tr>
@@ -389,15 +563,35 @@ export default async function AdmissionsPage() {
                     const workflowTransitionId =
                       workflow?.workflow_transition_id ?? null;
 
+                    const workflowTransitions =
+                      workflow?.transitions ?? [];
+
                     const canSubmitForReview =
                       canManage &&
                       workflowInstanceId !== null &&
                       workflowTransitionId !== null;
 
+                    const operatorState = getAdmissionOperatorState({
+                      status: item.status as AdmissionRequestStatus,
+                      applicantDateOfBirth:
+                        item.applicant_date_of_birth,
+                      requestedAdmissionDate:
+                        item.requested_admission_date,
+                      workflowStateCode:
+                        workflow?.current_state_code ?? null,
+                      workflowTransitionName:
+                        workflow?.transition_name ?? null,
+                    });
+
                     return (
                       <tr
+                        id={`admission-${item.id}`}
                         key={item.id}
-                        className="transition hover:bg-slate-800/30"
+                        className={`scroll-mt-24 transition hover:bg-slate-800/30 ${
+                          selectedAdmissionId === item.id
+                            ? "bg-cyan-500/5 ring-1 ring-inset ring-cyan-500/30"
+                            : ""
+                        }`}
                       >
                         <td className="px-6 py-4">
                           <div className="font-medium text-white">
@@ -474,6 +668,33 @@ export default async function AdmissionsPage() {
                         </td>
 
                         <td className="px-6 py-4">
+                          <div className="space-y-3">
+                            <div className="text-sm font-medium text-emerald-300">
+                              Next: {operatorState.nextAction}
+                            </div>
+
+                            {operatorState.exceptions.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {operatorState.exceptions.map(
+                                  (exception) => (
+                                    <span
+                                      key={exception}
+                                      className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300"
+                                    >
+                                      {
+                                        ADMISSION_OPERATOR_EXCEPTION_LABELS[
+                                          exception
+                                        ]
+                                      }
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
                           <div className="space-y-4">
                             {canSubmitForReview && (
                               <form
@@ -500,6 +721,88 @@ export default async function AdmissionsPage() {
                                   Submit for Review
                                 </button>
                               </form>
+                            )}
+
+                            {canManage &&
+                              workflowInstanceId !== null &&
+                              workflowTransitions
+                                .filter(
+                                  (transition) =>
+                                    transition.code !==
+                                    "submit_for_review"
+                                )
+                                .map((transition) => {
+                                  const isApproval =
+                                    transition.code ===
+                                    "approve_admission";
+
+                                  const isRejection =
+                                    transition.code ===
+                                    "reject_admission";
+
+                                  const isChanges =
+                                    transition.code ===
+                                    "request_admission_changes";
+
+                                  const label =
+                                    isApproval
+                                      ? "Approve Admission"
+                                      : isRejection
+                                        ? "Reject Admission"
+                                        : isChanges
+                                          ? "Request Changes"
+                                          : transition.name;
+
+                                  const className =
+                                    isApproval
+                                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                      : isRejection
+                                        ? "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                                        : isChanges
+                                          ? "border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                                          : "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700";
+
+                                  return (
+                                    <form
+                                      key={transition.id}
+                                      action={
+                                        executeAdmissionWorkflowTransition
+                                      }
+                                    >
+                                      <input
+                                        type="hidden"
+                                        name="workflow_instance_id"
+                                        value={workflowInstanceId}
+                                      />
+
+                                      <input
+                                        type="hidden"
+                                        name="workflow_transition_id"
+                                        value={transition.id}
+                                      />
+
+                                      <input
+                                        type="hidden"
+                                        name="workflow_transition_code"
+                                        value={transition.code}
+                                      />
+
+                                      <button
+                                        type="submit"
+                                        className={`w-full rounded-xl border px-4 py-2 text-sm font-medium transition ${className}`}
+                                      >
+                                        {label}
+                                      </button>
+                                    </form>
+                                  );
+                                })}
+                            {item.status === "approved" && (
+                              <Link
+                                href="/school/admissions/convert"
+                                className="inline-flex items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-300 transition hover:bg-violet-500/20"
+                              >
+                                Convert to Student
+                              </Link>
                             )}
 
                             {canManage ? (

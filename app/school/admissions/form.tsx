@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useActionState } from "react";
 import type {
@@ -70,28 +70,42 @@ export default function AdmissionForm({
         />
       )}
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {initialValues && (
         <div>
           <label
-            htmlFor="admission_request_id"
+            htmlFor="admission_request_reference"
             className="mb-2 block text-sm font-medium text-slate-300"
           >
-            Admission request ID
+            Admission reference
           </label>
 
           <input
-            id="admission_request_id"
-            name="admission_request_id"
+            id="admission_request_reference"
             type="text"
-            defaultValue={
-              initialValues?.admissionRequestId ?? ""
-            }
-            placeholder="e.g. ADM-2026-001"
-            required
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-slate-500"
+            value={initialValues.admissionRequestId}
+            readOnly
+            className="w-full cursor-default rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-400 outline-none"
           />
-        </div>
 
+          <p className="mt-2 text-xs text-slate-500">
+            This system-managed reference cannot be changed.
+          </p>
+        </div>
+      )}
+
+      {!initialValues && (
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+          <p className="text-sm font-medium text-slate-300">
+            Admission reference
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            The system will generate the admission reference automatically
+            when this request is created.
+          </p>
+        </div>
+      )}
+
+      <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label
             htmlFor="applicant_name"
@@ -157,7 +171,7 @@ export default function AdmissionForm({
             defaultValue={
               initialValues?.applicantDateOfBirth ?? ""
             }
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-slate-500"
           />
         </div>
 
@@ -176,7 +190,7 @@ export default function AdmissionForm({
             defaultValue={
               initialValues?.requestedAdmissionDate ?? ""
             }
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-slate-500"
           />
         </div>
 
