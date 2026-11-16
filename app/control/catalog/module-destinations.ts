@@ -4,6 +4,10 @@ export type ModuleDestination = {
 };
 
 const implementedModuleDestinations: Record<string, ModuleDestination> = {
+  business_os_tasks_projects: {
+    href: "/business/tasks",
+    label: "Tasks",
+  },
   education_os_admissions_enquiries: {
     href: "/school/admissions",
     label: "Admissions",

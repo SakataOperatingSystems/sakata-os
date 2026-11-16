@@ -15,6 +15,10 @@ const TASK_PRIORITIES = [
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
+export function isTaskStatus(value: string): value is TaskStatus {
+  return TASK_STATUSES.includes(value as TaskStatus);
+}
+
 export interface TaskInput {
   title: string;
   description: string | null;

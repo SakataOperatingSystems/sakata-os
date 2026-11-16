@@ -53,16 +53,22 @@ export function assessRegistryProduct(
   hasActiveOrganizationAssignment: boolean,
 ): RegistryPortfolioEntry {
   const isSchoolOs = product.code === "school_os";
+  const isBusinessOs = product.code === "business_os";
+  const hasImplementationEvidence = isSchoolOs || isBusinessOs;
 
   return {
     ...product,
     customerSegment:
       registryCustomerSegments[product.code] ??
       "Not documented; customer research is required.",
-    portfolioLifecycle: isSchoolOs ? "in_development" : "not_assessed",
-    readiness: isSchoolOs ? "in_development" : "not_assessed",
-    evidence: isSchoolOs
-      ? "School application routes, operational migrations, and tests exist. Full product verification, commercial validation, and production readiness are not established."
+    portfolioLifecycle: hasImplementationEvidence
+      ? "in_development"
+      : "not_assessed",
+    readiness: hasImplementationEvidence ? "in_development" : "not_assessed",
+    evidence: isBusinessOs
+      ? "An organization-scoped task dashboard and execution workflow exist. CRM, projects, approvals, and the remaining product scope, complete product verification, commercial validation, and production readiness are not established."
+      : isSchoolOs
+        ? "School application routes, operational migrations, and tests exist. Full product verification, commercial validation, and production readiness are not established."
       : "Registry identity and description only; product-specific implementation and customer research are not established.",
     businessProblem:
       "Not documented or validated in the repository; severity, frequency, and willingness to pay are unknown.",

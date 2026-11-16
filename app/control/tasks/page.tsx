@@ -1,4 +1,7 @@
-import { requirePermission } from "@/app/lib/auth/authorization";
+import {
+  hasPermission,
+  requirePermission,
+} from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
 import TaskForm from "./form";
@@ -49,8 +52,17 @@ type TaskWithWorkflow = Task & {
   workflowLink: WorkflowTaskLink | null;
 };
 
-export default async function TasksPage() {
+type TasksPageOptions = {
+  workspaceName?: string;
+  includeSchoolWorkflowContext?: boolean;
+};
+
+export default async function TasksPage({
+  workspaceName = "Task Engine",
+  includeSchoolWorkflowContext = true,
+}: TasksPageOptions = {}) {
   await requirePermission("core.tasks.read");
+  const canManageTasks = await hasPermission("core.tasks.manage");
 
   const context = await getOrganizationContext();
   const supabase = await createClient();
@@ -100,7 +112,7 @@ export default async function TasksPage() {
 
   let workflowLinks: WorkflowTaskLink[] = [];
 
-  if (taskIds.length > 0) {
+  if (includeSchoolWorkflowContext && taskIds.length > 0) {
     const { data: links, error: linksError } = await supabase
       .from("workflow_task_links")
       .select(
@@ -271,15 +283,17 @@ function getTaskNextAction(status: Task["status"]): string {
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-            SAKATA Operating Systems
+          SAKATA Operating Systems · {workspaceName}
           </p>
 
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">Tasks</h1>
+              <h1 className="text-4xl font-bold tracking-tight">
+                Operational tasks
+              </h1>
 
               <p className="mt-3 max-w-3xl text-slate-400">
-                Reusable operational work management for{" "}
+                Organization-scoped task execution for{" "}
                 <span className="font-medium text-slate-200">
                   {context.organization.name}
                 </span>
@@ -293,7 +307,7 @@ function getTaskNextAction(status: Task["status"]): string {
               </p>
 
               <p className="mt-1 font-semibold text-slate-200">
-                Task Engine
+                {workspaceName}
               </p>
 
               <p className="text-xs text-slate-500">
@@ -330,9 +344,16 @@ function getTaskNextAction(status: Task["status"]): string {
           </div>
         </section>
 
-        <section className="mb-8">
-          <TaskForm members={members} />
-        </section>
+        {canManageTasks ? (
+          <section className="mb-8">
+            <TaskForm members={members} />
+          </section>
+        ) : (
+          <p className="mb-8 rounded-xl border border-slate-800 bg-slate-900 px-5 py-4 text-sm text-slate-400">
+            You have read access to this task register. Task creation and
+            updates require the task management permission.
+          </p>
+        )}
 
         <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
           <div className="border-b border-slate-800 px-6 py-5">
@@ -499,15 +520,17 @@ function getTaskNextAction(status: Task["status"]): string {
                       </div>
                     </div>
 
-                    <details className="w-full shrink-0 xl:w-[420px]">
-                      <summary className="cursor-pointer text-sm font-semibold text-emerald-400 hover:text-emerald-300">
-                        Edit task
-                      </summary>
+                    {canManageTasks && (
+                      <details className="w-full shrink-0 xl:w-[420px]">
+                        <summary className="cursor-pointer text-sm font-semibold text-emerald-400 hover:text-emerald-300">
+                          Edit task
+                        </summary>
 
-                      <div className="mt-4">
-                        <TaskForm task={task} members={members} />
-                      </div>
-                    </details>
+                        <div className="mt-4">
+                          <TaskForm task={task} members={members} />
+                        </div>
+                      </details>
+                    )}
                   </div>
                 </article>
               ))}

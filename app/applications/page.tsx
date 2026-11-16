@@ -26,6 +26,10 @@ const APPLICATION_ENTRY_POINTS: Record<
   string,
   { href: string; permission: string }
 > = {
+  business_os: {
+    href: "/business",
+    permission: "core.tasks.read",
+  },
   school_os: {
     href: "/school",
     permission: "school.academic_periods.read",

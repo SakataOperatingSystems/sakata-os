@@ -78,6 +78,24 @@ describe("Control Plane product portfolio", () => {
     expect(product.priority).toBe("unranked");
   });
 
+  it("marks Business OS in development without overstating its implemented scope", () => {
+    const product = assessRegistryProduct(
+      {
+        code: "business_os",
+        name: "SAKATA Business OS",
+        description: "Business operations",
+        status: "active",
+      },
+      true,
+    );
+
+    expect(product.portfolioLifecycle).toBe("in_development");
+    expect(product.readiness).toBe("in_development");
+    expect(product.evidence).toContain("task dashboard and execution workflow");
+    expect(product.evidence).toContain("CRM, projects, approvals");
+    expect(product.evidence).toContain("not established");
+  });
+
   it("uses distinct labels for approval, implementation, verification, and release readiness", () => {
     expect(formatPortfolioLifecycle("proposed")).toBe("Proposed");
     expect(formatPortfolioLifecycle("approved")).toBe("Approved");
@@ -108,6 +126,10 @@ describe("Control Plane product portfolio", () => {
   });
 
   it("links only implemented School module routes and leaves other modules unavailable", () => {
+    expect(getModuleDestination("business_os_tasks_projects")).toEqual({
+      href: "/business/tasks",
+      label: "Tasks",
+    });
     expect(
       getModuleDestination("education_os_admissions_enquiries"),
     ).toEqual({ href: "/school/admissions", label: "Admissions" });

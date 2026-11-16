@@ -1,12 +1,23 @@
 # SAKATA OS Execution State
 
-**Updated:** 2026-10-25
+**Updated:** 2026-11-16
+
+## Business OS MVP increment (2026-11-16)
+
+- **Business OS entry point:** `/applications` now exposes Business OS only when it is actively assigned to the selected organization and the current member has `core.tasks.read`. `/business` independently verifies the active deployment and permission; `/business/tasks` reuses the shared task register.
+- **Demonstrable workflow:** The organization dashboard reports exact counts for active, overdue, urgent, and completed tasks. The task register supports task creation, assignment to active organization members, priorities, deadlines, status updates, completion timestamps, and audit events through the existing shared task foundation. Task management controls are shown only to members with `core.tasks.manage`.
+- **Tenant and permission boundary:** Task queries remain explicitly organization-scoped and use the authenticated Supabase client. A new migration replaces the member-only task-read RLS policy with a tenant-and-`core.tasks.read` policy. It also enforces initial `open` status and permitted task lifecycle transitions in the database, not just in the form.
+- **Portfolio accuracy:** Business OS, Commerce OS, and Finance OS remain represented by their distinct catalogue scopes. The Business OS application explicitly labels the task workflow as this MVP's implementation and does not present its remaining catalogue capabilities as completed modules. No approval engine was added; the existing shared workflow implementation was left intact.
+- **Migration / live database status:** The migration is source-added but has **not** been applied or verified against a live database in this increment. Permission-backed RLS behavior and lifecycle enforcement therefore remain **UNVERIFIED** until the migration is applied and tested against a non-production database.
+- **Catalogue status:** Business OS is now marked **In development** with evidence limited to its organization-scoped task dashboard and workflow. The `Tasks & projects` catalogue destination links only to implemented Tasks; CRM, projects, approvals, and other catalogue capabilities remain unimplemented or unverified.
+- **Demonstration prerequisite:** The last recorded live catalogue check found one active organization-product assignment, for School OS; an active Business OS assignment for a demonstration organization has not been verified. Do not bypass the deployment gate or create an assignment without the authorized organization decision.
+- **Verification (2026-11-16):** Full suite **208 passed across 32 files**; changed-file ESLint and `git diff --check` passed; the final Next.js production build passed with TypeScript and generated `/business` and `/business/tasks`. Anonymous HTTP requests to both Business routes returned **307 to `/login`**. Authenticated end-to-end task execution and live RLS checks were not run. The full-repository lint has no errors and retains 13 pre-existing warnings in unrelated files.
 
 ## Current implementation status
 
 - **Brand identity:** SAKATA TECHNOLOGIES is the company; SAKATA OPERATING SYSTEMS is its multi-tenant product platform.
 - **Control Plane portfolio:** A read-only live database query verified the 16 curated product identities against existing canonical code/name pairs. No aliases or duplicate product definitions were added.
-- **Status distinction:** Registry lifecycle (`active`, `suspended`, `archived`) is separate from portfolio lifecycle, implementation readiness, prioritization, and organization assignment. Only School OS is marked in development from repository implementation evidence; the remaining registry products are not assessed. No product is marked verified or production-ready by this portfolio view.
+- **Status distinction:** Registry lifecycle (`active`, `suspended`, `archived`) is separate from portfolio lifecycle, implementation readiness, prioritization, and organization assignment. School OS and Business OS are marked in development from repository implementation evidence; the remaining registry products are not assessed. No product is marked verified or production-ready by this portfolio view.
 - **Opportunity evidence:** Candidate workflows are discovery hypotheses. Demand, problem severity/frequency, willingness to pay, estimates, capability reuse, and operational/regulatory risks are not scored because evidence is insufficient. All portfolio entries remain unranked.
 - **Portfolio persistence decision:** Proposed opportunities remain code-governed portfolio hypotheses, separate from the database product registry. No portfolio-editor permission or evidence-review workflow exists; adding an editable database source now would introduce an ungoverned second source of truth. No numeric market scores or evidence claims were added.
 - **Shared Documents capability:** Added `/documents` as a tenant-scoped metadata register with create, read/detail, and archive operations. The route is outside the platform-admin-only `/control` layout and is linked from the School OS navigation when the user has `core.documents.read`.

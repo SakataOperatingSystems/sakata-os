@@ -5,7 +5,9 @@ import { createClient } from "@/app/lib/supabase/server";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { requirePermission } from "@/app/lib/auth/authorization";
 import {
+  isTaskStatus,
   isValidTaskStateTransition,
+  type TaskStatus,
   validateTaskInput,
 } from "./validation";
 
@@ -97,7 +99,7 @@ async function validateTaskStateTransition(
   supabase: Awaited<ReturnType<typeof createClient>>,
   organizationId: string,
   taskId: string,
-  requestedStatus: string
+  requestedStatus: TaskStatus
 ): Promise<void> {
   const { data: currentTask, error } = await supabase
     .from("tasks")
@@ -120,7 +122,10 @@ async function validateTaskStateTransition(
 
   const currentStatus = currentTask.status as string;
 
-  if (!isValidTaskStateTransition(currentStatus as never, requestedStatus as never)) {
+  if (
+    !isTaskStatus(currentStatus) ||
+    !isValidTaskStateTransition(currentStatus, requestedStatus)
+  ) {
     throw new Error(
       `Invalid task state transition: ${currentStatus} ? ${requestedStatus}.`
     );
@@ -144,6 +149,13 @@ export async function createTask(
       assignedToUserId,
       dueAt,
     } = validateTaskInput(formData);
+
+    if (status !== "open") {
+      return {
+        success: false,
+        error: "New tasks must start in the open state.",
+      };
+    }
 
     await validateTaskAssignee(
       supabase,
@@ -171,6 +183,8 @@ export async function createTask(
     revalidatePath("/control/tasks");
     revalidatePath("/school/tasks");
     revalidatePath("/school");
+    revalidatePath("/business");
+    revalidatePath("/business/tasks");
 
     return {
       success: true,
@@ -272,6 +286,8 @@ export async function updateTask(
     revalidatePath("/control/tasks");
     revalidatePath("/school/tasks");
     revalidatePath("/school");
+    revalidatePath("/business");
+    revalidatePath("/business/tasks");
 
     return {
       success: true,
