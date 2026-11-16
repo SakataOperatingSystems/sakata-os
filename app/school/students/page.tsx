@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import {
   hasPermission,
   requirePermission,
@@ -7,6 +7,15 @@ import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
 import { createStudent, updateStudent } from "./actions";
 import StudentForm from "./form";
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "Active",
+  inactive: "Inactive",
+  graduated: "Graduated",
+  withdrawn: "Withdrawn",
+  transferred: "Transferred",
+  deceased: "Deceased",
+};
 
 const STATUS_STYLES: Record<string, string> = {
   active:
@@ -23,6 +32,13 @@ const STATUS_STYLES: Record<string, string> = {
     "border-red-500/30 bg-red-500/10 text-red-300",
 };
 
+const GENDER_LABELS: Record<string, string> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+  unspecified: "Unspecified",
+};
+
 export default async function StudentsPage() {
   await requirePermission("school.students.read");
 
@@ -34,13 +50,47 @@ export default async function StudentsPage() {
   const { data: students, error } = await supabase
     .from("students")
     .select(
-      "id, student_id, full_name, gender, date_of_birth, admission_date, nin, status, welfare_status, location, notes, created_at, updated_at"
+      "id, student_id, full_name, gender, date_of_birth, admission_date, admission_request_id, nin, status, welfare_status, location, notes, created_at, updated_at"
     )
     .eq("organization_id", organization.id)
-    .order("full_name", { ascending: true });
+    .order("student_id", { ascending: true });
 
   if (error) {
     throw new Error(`Failed to load students: ${error.message}`);
+  }
+
+  const admissionRequestIds = Array.from(
+    new Set(
+      (students ?? [])
+        .map((student) => student.admission_request_id)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const admissionReferenceById = new Map<string, string>();
+
+  if (admissionRequestIds.length > 0) {
+    const {
+      data: admissionRequests,
+      error: admissionRequestsError,
+    } = await supabase
+      .from("student_admission_requests")
+      .select("id, admission_request_id")
+      .eq("organization_id", organization.id)
+      .in("id", admissionRequestIds);
+
+    if (admissionRequestsError) {
+      throw new Error(
+        `Failed to load admission references: ${admissionRequestsError.message}`
+      );
+    }
+
+    for (const admissionRequest of admissionRequests ?? []) {
+      admissionReferenceById.set(
+        admissionRequest.id,
+        admissionRequest.admission_request_id
+      );
+    }
   }
 
   return (
@@ -89,7 +139,7 @@ export default async function StudentsPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-500">
-              One student record anchors the student's operational lifecycle.
+              One student record anchors the student&apos;s operational lifecycle.
             </p>
           </div>
 
@@ -204,15 +254,34 @@ export default async function StudentsPage() {
                       </td>
 
                       <td className="px-6 py-4 text-slate-300">
-                        {student.gender || "Not recorded"}
+                        {student.gender
+                          ? GENDER_LABELS[student.gender] ??
+                            student.gender
+                          : "Not recorded"}
                       </td>
 
                       <td className="px-6 py-4 text-slate-400">
                         {student.date_of_birth || "Not recorded"}
                       </td>
 
-                      <td className="px-6 py-4 text-slate-400">
-                        {student.admission_date || "Not recorded"}
+                      <td className="px-6 py-4">
+                        {student.admission_request_id ? (
+                          <div>
+                            <div className="font-medium text-emerald-400">
+                              Admission linked
+                            </div>
+
+                            <div className="mt-1 font-mono text-xs text-slate-500">
+                              {admissionReferenceById.get(
+                                student.admission_request_id
+                              ) ?? "Admission reference unavailable"}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">
+                            Not recorded
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-6 py-4 text-slate-400">
@@ -226,44 +295,54 @@ export default async function StudentsPage() {
                             "border-slate-700 bg-slate-800 text-slate-300"
                           }`}
                         >
-                          {student.status}
+                          {STATUS_LABELS[student.status] ??
+                            student.status}
                         </span>
                       </td>
 
-                      <td className="px-6 py-4">
-                        {canManage ? (
-                          <details>
-                            <summary className="cursor-pointer text-sm text-slate-300 hover:text-white">
-                              Edit
-                            </summary>
+                                            <td className="px-6 py-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Link
+                            href={`/school/students/${student.id}`}
+                            className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-700 hover:text-white"
+                          >
+                            Open 360
+                          </Link>
 
-                            <div className="mt-4 min-w-[700px] rounded-xl border border-slate-800 bg-slate-950/70 p-5">
-                              <StudentForm
-                                action={updateStudent}
-                                initialValues={{
-                                  id: student.id,
-                                  studentId: student.student_id,
-                                  fullName: student.full_name,
-                                  gender: student.gender ?? "",
-                                  dateOfBirth:
-                                    student.date_of_birth ?? "",
-                                  admissionDate:
-                                    student.admission_date ?? "",
-                                  nin: student.nin ?? "",
-                                  status: student.status,
-                                  welfareStatus:
-                                    student.welfare_status ?? "",
-                                  location: student.location ?? "",
-                                  notes: student.notes ?? "",
-                                }}
-                              />
-                            </div>
-                          </details>
-                        ) : (
-                          <span className="text-xs text-slate-600">
-                            Read only
-                          </span>
-                        )}
+                          {canManage ? (
+                            <details>
+                              <summary className="cursor-pointer text-sm text-slate-300 hover:text-white">
+                                Edit
+                              </summary>
+
+                              <div className="mt-4 min-w-[700px] rounded-xl border border-slate-800 bg-slate-950/70 p-5">
+                                <StudentForm
+                                  action={updateStudent}
+                                  initialValues={{
+                                    id: student.id,
+                                    studentId: student.student_id,
+                                    fullName: student.full_name,
+                                    gender: student.gender ?? "",
+                                    dateOfBirth:
+                                      student.date_of_birth ?? "",
+                                    admissionDate:
+                                      student.admission_date ?? "",
+                                    nin: student.nin ?? "",
+                                    status: student.status,
+                                    welfareStatus:
+                                      student.welfare_status ?? "",
+                                    location: student.location ?? "",
+                                    notes: student.notes ?? "",
+                                  }}
+                                />
+                              </div>
+                            </details>
+                          ) : (
+                            <span className="text-xs text-slate-600">
+                              Read only
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

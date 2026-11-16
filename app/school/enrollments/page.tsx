@@ -24,8 +24,18 @@ const STATUS_STYLES: Record<string, string> = {
     "border-red-500/30 bg-red-500/10 text-red-300",
 };
 
-export default async function EnrollmentsPage() {
+export default async function EnrollmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ student_id?: string }>;
+}) {
   await requirePermission("school.enrollments.read");
+
+  const resolvedSearchParams = await searchParams;
+  const requestedStudentId =
+    typeof resolvedSearchParams.student_id === "string"
+      ? resolvedSearchParams.student_id.trim()
+      : "";
 
   const { organization } = await getOrganizationContext();
   const canManage = await hasPermission(
@@ -119,6 +129,14 @@ export default async function EnrollmentsPage() {
     ])
   );
 
+  const initialStudentId =
+    requestedStudentId &&
+    (students ?? []).some(
+      (student) => student.id === requestedStudentId
+    )
+      ? requestedStudentId
+      : "";
+
   const activeCount =
     enrollments?.filter(
       (item) => item.status === "active"
@@ -206,6 +224,7 @@ export default async function EnrollmentsPage() {
               students={students ?? []}
               classes={classes ?? []}
               academicPeriods={academicPeriods ?? []}
+              initialStudentId={initialStudentId}
             />
           </section>
         )}
@@ -264,6 +283,9 @@ export default async function EnrollmentsPage() {
                     </th>
                     <th className="px-6 py-4 font-medium">
                       Status
+                    </th>
+                    <th className="px-6 py-4 font-medium">
+                      Next action
                     </th>
                     <th className="px-6 py-4 font-medium">
                       Action
@@ -345,6 +367,30 @@ export default async function EnrollmentsPage() {
                             {item.status}
                           </span>
                         </td>
+
+                        <td className="px-6 py-4">
+  {item.status === "active" ? (
+    <div className="flex flex-wrap items-center gap-3">
+      <Link
+        href="/school/attendance"
+        className="text-sm font-medium text-slate-300 hover:text-white"
+      >
+        Record attendance
+      </Link>
+
+      <Link
+        href={`/school/finance/accounts?student_id=${encodeURIComponent(
+          item.student_id,
+        )}&enrollment_id=${encodeURIComponent(item.id)}`}
+        className="inline-flex items-center rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-300 transition hover:border-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-200"
+      >
+        Finance readiness
+      </Link>
+    </div>
+  ) : (
+    <span className="text-sm text-slate-500">Closed</span>
+  )}
+</td>
 
                         <td className="px-6 py-4">
                           {canManage ? (

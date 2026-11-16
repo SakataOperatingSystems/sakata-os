@@ -1,0 +1,4555 @@
+{
+  "title": "SAKATA OS Catalogue Data Readiness Inventory",
+  "status": "Candidate design input only. Not a schema, migration, permission grant, or implementation claim.",
+  "generatedFrom": "app/control/catalog/page.tsx",
+  "databaseImplementation": {
+    "migration": "supabase/migrations/20261025010000_connect_curated_os_portfolio.sql",
+    "verificationQuery": "supabase/verify_curated_os_catalogue.sql",
+    "intendedProductDefinitions": 16,
+    "uniqueIntendedModuleDefinitions": 175,
+    "intendedProductModuleAssignments": 192,
+    "migrationApplied": false,
+    "liveDatabaseState": "UNKNOWN: linked read-only SQL failed with SQLSTATE 28P01; configured PostgREST service_role returned 42501 permission denied.",
+    "applicationFunctionality": "NOT VERIFIED for all 16 curated products; database definitions and module assignments do not establish working application functionality.",
+    "organizationAssignmentsWritten": false,
+    "security": "RLS stays enabled. Inactive global catalogue records are exposed only to authenticated organization.read users; organization-product reads remain tenant-scoped."
+  },
+  "inventory": {
+    "productCount": 16,
+    "uniqueIds": 16,
+    "moduleCounts": [
+      12
+    ],
+    "capabilityCounts": [
+      7
+    ],
+    "workflowCounts": [
+      4
+    ]
+  },
+  "canonicalCatalogueComparison": {
+    "repositoryCanonicalProducts": [
+      "School OS",
+      "Business OS",
+      "Real Estate OS",
+      "Pharmacy OS",
+      "Hospital OS",
+      "Hotel OS",
+      "Retail OS",
+      "Wholesale OS",
+      "Factory OS",
+      "Restaurant OS",
+      "Petrol Station OS",
+      "Warehouse OS",
+      "NGO OS",
+      "Training OS"
+    ],
+    "currentCuratedProducts": [
+      "SAKATA Education OS",
+      "SAKATA Business OS",
+      "SAKATA Commerce OS",
+      "SAKATA Finance OS",
+      "SAKATA Fleet & Mobility OS",
+      "SAKATA Property OS",
+      "SAKATA Hospitality OS",
+      "SAKATA Garage OS",
+      "SAKATA Parking & Access OS",
+      "SAKATA Manufacturing OS",
+      "SAKATA Microfinance OS",
+      "SAKATA Supply Chain OS",
+      "SAKATA Healthcare Administration OS",
+      "SAKATA Construction OS",
+      "SAKATA Agriculture OS",
+      "SAKATA Workforce OS"
+    ],
+    "confirmedDiscrepancy": "The curated set contains 16 concepts and does not match the repository canonical 14-product catalogue. Business OS is the sole exact name match. Similar-sounding entries are not treated as aliases without an approved decision.",
+    "verifiedReconciliation": [
+      {
+        "curatedId": "education",
+        "curatedName": "SAKATA Education OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["School OS"],
+        "evidence": "The canonical school_os seed and School OS module assignments cover school records; no alias equating Education OS to School OS is defined.",
+        "decision": "Keep distinct; product-owner decision required on family/variant relationship."
+      },
+      {
+        "curatedId": "business",
+        "curatedName": "SAKATA Business OS",
+        "classification": "exact_match",
+        "canonicalCandidates": ["Business OS"],
+        "evidence": "Migration 20260912121000_add_business_os_product.sql inserts business_os with the SAKATA Business OS name and corresponding horizontal operations scope.",
+        "decision": "Confirmed exact canonical product match."
+      },
+      {
+        "curatedId": "commerce",
+        "curatedName": "SAKATA Commerce OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Retail OS", "Wholesale OS", "Restaurant OS"],
+        "evidence": "Curated retail, stock, branch, supplier, and sales concepts overlap these seeded product definitions; no Commerce OS canonical definition or alias exists.",
+        "decision": "Business input required to decide composite view versus distinct product."
+      },
+      {
+        "curatedId": "finance",
+        "curatedName": "SAKATA Finance OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No Finance OS code or product definition exists in the canonical 14-product seed.",
+        "decision": "Decide whether it is a product family, shared platform capability, or Business OS domain."
+      },
+      {
+        "curatedId": "fleet",
+        "curatedName": "SAKATA Fleet & Mobility OS",
+        "classification": "proposed_opportunity",
+        "canonicalCandidates": [],
+        "evidence": "Execution state identifies Fleet & Mobility OS as proposed; no fleet_mobility_os canonical seed exists.",
+        "decision": "Keep proposed until business approval."
+      },
+      {
+        "curatedId": "property",
+        "curatedName": "SAKATA Property OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Real Estate OS"],
+        "evidence": "Migration 20260912120000_add_real_estate_os_product.sql defines real_estate_os for property/leasing operations; no alias equating Property OS to Real Estate OS exists.",
+        "decision": "Keep distinct pending product-owner confirmation."
+      },
+      {
+        "curatedId": "hospitality",
+        "curatedName": "SAKATA Hospitality OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Hotel OS"],
+        "evidence": "Canonical seed contains hotel_os; repository evidence does not establish Hospitality OS as its alias or scope-equivalent.",
+        "decision": "Keep distinct; decide whether Hospitality OS is broader than Hotel OS."
+      },
+      {
+        "curatedId": "garage",
+        "curatedName": "SAKATA Garage OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No garage/workshop product definition exists in the canonical seed.",
+        "decision": "No mapping approved."
+      },
+      {
+        "curatedId": "parking",
+        "curatedName": "SAKATA Parking & Access OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No parking/access product definition exists in the canonical seed.",
+        "decision": "No mapping approved."
+      },
+      {
+        "curatedId": "manufacturing",
+        "curatedName": "SAKATA Manufacturing OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Factory OS"],
+        "evidence": "Canonical seed contains factory_os; curated manufacturing and factory semantics overlap, but there is no confirmed alias.",
+        "decision": "Keep distinct until scope and identity are approved."
+      },
+      {
+        "curatedId": "microfinance",
+        "curatedName": "SAKATA Microfinance OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No microfinance product definition exists in the canonical seed.",
+        "decision": "No mapping approved."
+      },
+      {
+        "curatedId": "supply",
+        "curatedName": "SAKATA Supply Chain OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Warehouse OS", "Wholesale OS"],
+        "evidence": "Canonical seeds include warehouse_os and wholesale_os; no supply-chain product or alias is defined.",
+        "decision": "Decide whether Supply Chain OS is composite or distinct."
+      },
+      {
+        "curatedId": "health",
+        "curatedName": "SAKATA Healthcare Administration OS",
+        "classification": "partial_overlap",
+        "canonicalCandidates": ["Hospital OS"],
+        "evidence": "Canonical seed contains hospital_os; healthcare-administration scope may be narrower and is not defined as an alias.",
+        "decision": "Keep distinct pending scope/ownership decision."
+      },
+      {
+        "curatedId": "construction",
+        "curatedName": "SAKATA Construction OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No construction product definition exists in the canonical seed.",
+        "decision": "No mapping approved."
+      },
+      {
+        "curatedId": "agriculture",
+        "curatedName": "SAKATA Agriculture OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No agriculture product definition exists in the canonical seed.",
+        "decision": "No mapping approved."
+      },
+      {
+        "curatedId": "workforce",
+        "curatedName": "SAKATA Workforce OS",
+        "classification": "unmatched",
+        "canonicalCandidates": [],
+        "evidence": "No workforce product definition exists in the canonical seed.",
+        "decision": "No alias approved."
+      }
+    ]
+  },
+  "otherCatalogueSurface": {
+    "route": "/control/product-catalog",
+    "source": "app/control/product-catalog/page.tsx",
+    "productCount": 16,
+    "comparison": "The legacy page delegates to /control/catalog; product definitions exist only in the authoritative curated catalogue.",
+    "status": "Compatibility redirect; preserves the product query parameter and drops unrelated query parameters."
+  },
+  "registryApiBoundary": {
+    "route": "/api/control/catalog",
+    "authorization": "Source requires organization.read; actual authorized requests were not browser-tested.",
+    "reads": [
+      "Active product_definitions",
+      "Active product_modules",
+      "Active module_definitions"
+    ],
+    "tenantAssignmentsIncluded": false,
+    "uiEffect": "The /control/catalog page uses the response only for a registry record count/status. Curated product definitions remain local and are not filtered or replaced by API data.",
+    "emptyResponse": "An empty products array is valid and results in a zero registry count; the curated catalogue remains visible.",
+    "failureResponse": "A non-OK response or invalid payload is logged and changes the page status to unavailable; curated definitions remain visible.",
+    "verification": "Source inspection and parser unit test for empty response; no live database/API browser request was completed."
+  },
+  "sharedDomainCandidates": [
+    {
+      "domain": "Identity and organizations",
+      "status": "existing platform shared domain; candidate links must enforce organization scope"
+    },
+    {
+      "domain": "People, staff, customers, suppliers",
+      "status": "supported as shared module catalogue concepts; entity reuse and separation require semantics review"
+    },
+    {
+      "domain": "Tasks, workflows, approvals, audit, documents, communications, calendar, notifications",
+      "status": "supported by shared module catalogue; product-specific transitions and data relations remain decisions"
+    },
+    {
+      "domain": "Finance, billing, payments, budgets, inventory, procurement, assets, maintenance, reporting",
+      "status": "shared module catalogue concepts; ledger/accounting and operational constraints require domain design"
+    }
+  ],
+  "businessDecisionsRequiredBeforeMigrations": [
+    "Approve the canonical product set and resolve 16 curated entries versus 14 canonical products; decide if composite products, proposed opportunities, and platform capabilities need separate views.",
+    "For every module, decide whether it is a feature area, shared bounded context, or product-owned domain and map it to entities explicitly.",
+    "Define actor roles, read/write/approve/archive permissions, separation of duties, sensitive-field access, and organization assignment rules.",
+    "Define relationship cardinality, lifecycle states, deletion/archive and retention, audit events, financial precision/currency, concurrency/idempotency, and regulatory requirements by domain.",
+    "Select canonical table ownership and reuse boundaries against the existing platform schema; do not infer tables from catalogue labels."
+  ],
+  "mappingMethod": "Every catalogue module and every stage in every workflow is represented in candidateModel. Candidate entities are the product Core records labels. Text-overlap links are discovery candidates only; empty links are explicit UNKNOWN gaps, not presumed entities. All inferred links and rules require domain-owner decisions before schema or migration work.",
+  "products": [
+    {
+      "id": "education",
+      "displayedName": "SAKATA Education OS",
+      "icon": "◈",
+      "category": "Education",
+      "tagline": "Schools, colleges and learning institutions",
+      "description": "A connected operating system for running an education institution, from the first admission enquiry to graduation, finance, staff, learning and institutional reporting.",
+      "audience": "Schools, academies, colleges and education groups",
+      "productPromise": "One institutional record across the learner journey.",
+      "modules": [
+        "Admissions & enquiries",
+        "Student information",
+        "Classrooms & timetables",
+        "Attendance",
+        "Examinations & grading",
+        "Fees & billing",
+        "Parent communication",
+        "Staff & HR",
+        "Transport",
+        "Library",
+        "Inventory",
+        "Reports & analytics"
+      ],
+      "capabilities": [
+        "Applicant-to-student conversion",
+        "Academic year and term management",
+        "Class, subject and teacher allocation",
+        "Fee schedules, invoices and balances",
+        "Assessment results and report cards",
+        "Parent and guardian access",
+        "Role-based access and audit trails"
+      ],
+      "workflows": [
+        "Enquiry → Application → Review → Admission",
+        "Student → Class allocation → Attendance",
+        "Assessment → Moderation → Results",
+        "Invoice → Payment → Reconciliation"
+      ],
+      "coreRecords": [
+        "Students",
+        "Guardians",
+        "Applications",
+        "Academic years",
+        "Classes",
+        "Subjects",
+        "Assessments",
+        "Invoices",
+        "Payments",
+        "Staff"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Students",
+          "Guardians",
+          "Applications",
+          "Academic years",
+          "Classes",
+          "Subjects",
+          "Assessments",
+          "Invoices",
+          "Payments",
+          "Staff"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Admissions & enquiries",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Student information",
+            "candidateEntities": [
+              "Students"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Classrooms & timetables",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Attendance",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Examinations & grading",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Fees & billing",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Parent communication",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Staff & HR",
+            "candidateEntities": [
+              "Staff"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Transport",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Library",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Inventory",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Reports & analytics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Enquiry → Application → Review → Admission",
+            "stages": [
+              "Enquiry",
+              "Application",
+              "Review",
+              "Admission"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Enquiry",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Application",
+                "candidateEntities": [
+                  "Applications"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Admission",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Student → Class allocation → Attendance",
+            "stages": [
+              "Student",
+              "Class allocation",
+              "Attendance"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Student",
+                "candidateEntities": [
+                  "Students"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Class allocation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Attendance",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Assessment → Moderation → Results",
+            "stages": [
+              "Assessment",
+              "Moderation",
+              "Results"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Assessment",
+                "candidateEntities": [
+                  "Assessments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Moderation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Results",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Invoice → Payment → Reconciliation",
+            "stages": [
+              "Invoice",
+              "Payment",
+              "Reconciliation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Invoice",
+                "candidateEntities": [
+                  "Invoices"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Reconciliation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "business",
+      "displayedName": "SAKATA Business OS",
+      "icon": "▦",
+      "category": "Business",
+      "tagline": "Everyday business operations in one workspace",
+      "description": "A unified workspace for the daily work of a growing organisation, connecting customers, tasks, documents, approvals, teams, money and performance.",
+      "audience": "SMEs, professional firms and multi-department organisations",
+      "productPromise": "Turn disconnected business activity into accountable workflows.",
+      "modules": [
+        "Executive dashboard",
+        "CRM",
+        "Tasks & projects",
+        "Approvals",
+        "Documents",
+        "Team directory",
+        "Expenses",
+        "Budgets",
+        "Service requests",
+        "Reports",
+        "Notifications",
+        "Organisation settings"
+      ],
+      "capabilities": [
+        "Customer and account management",
+        "Task ownership and deadlines",
+        "Approval routing",
+        "Document and record history",
+        "Expense submission and review",
+        "Department-level reporting",
+        "Permission-aware dashboards"
+      ],
+      "workflows": [
+        "Request → Assignment → Completion",
+        "Expense → Review → Approval",
+        "Lead → Opportunity → Customer",
+        "Plan → Execute → Measure"
+      ],
+      "coreRecords": [
+        "Organisations",
+        "Departments",
+        "Users",
+        "Customers",
+        "Tasks",
+        "Projects",
+        "Approvals",
+        "Expenses",
+        "Documents"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Organisations",
+          "Departments",
+          "Users",
+          "Customers",
+          "Tasks",
+          "Projects",
+          "Approvals",
+          "Expenses",
+          "Documents"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Executive dashboard",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "CRM",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Tasks & projects",
+            "candidateEntities": [
+              "Tasks",
+              "Projects"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Approvals",
+            "candidateEntities": [
+              "Approvals"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Documents",
+            "candidateEntities": [
+              "Documents"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Team directory",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Expenses",
+            "candidateEntities": [
+              "Expenses"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Budgets",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Service requests",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Notifications",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Organisation settings",
+            "candidateEntities": [
+              "Organisations"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Request → Assignment → Completion",
+            "stages": [
+              "Request",
+              "Assignment",
+              "Completion"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Request",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Assignment",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Completion",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Expense → Review → Approval",
+            "stages": [
+              "Expense",
+              "Review",
+              "Approval"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Expense",
+                "candidateEntities": [
+                  "Expenses"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [
+                  "Approvals"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Lead → Opportunity → Customer",
+            "stages": [
+              "Lead",
+              "Opportunity",
+              "Customer"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Lead",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Opportunity",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Customer",
+                "candidateEntities": [
+                  "Customers"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Plan → Execute → Measure",
+            "stages": [
+              "Plan",
+              "Execute",
+              "Measure"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Plan",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Execute",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Measure",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "commerce",
+      "displayedName": "SAKATA Commerce OS",
+      "icon": "◇",
+      "category": "Commerce",
+      "tagline": "Retail, shops and multi-branch selling",
+      "description": "A retail operating system connecting products, pricing, point of sale, stock, customers, suppliers and branch performance.",
+      "audience": "Retailers, wholesalers, shops and retail chains",
+      "productPromise": "Know what you sell, what you hold and what each branch earns.",
+      "modules": [
+        "Point of sale",
+        "Product catalogue",
+        "Stock control",
+        "Purchasing",
+        "Suppliers",
+        "Customer accounts",
+        "Discounts & promotions",
+        "Returns",
+        "Branch management",
+        "Cash-up",
+        "Sales reports",
+        "Loyalty"
+      ],
+      "capabilities": [
+        "Barcode and SKU-based products",
+        "Stock movements and adjustments",
+        "Branch-level inventory",
+        "Sales and returns tracking",
+        "Purchase orders and receiving",
+        "Cashier shifts and reconciliation",
+        "Low-stock monitoring"
+      ],
+      "workflows": [
+        "Purchase → Receive → Stock",
+        "Sale → Payment → Receipt",
+        "Return → Inspection → Resolution",
+        "Reorder → Supplier → Delivery"
+      ],
+      "coreRecords": [
+        "Products",
+        "Variants",
+        "Branches",
+        "Stock movements",
+        "Sales",
+        "Sale items",
+        "Customers",
+        "Suppliers",
+        "Purchase orders",
+        "Payments"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Products",
+          "Variants",
+          "Branches",
+          "Stock movements",
+          "Sales",
+          "Sale items",
+          "Customers",
+          "Suppliers",
+          "Purchase orders",
+          "Payments"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Point of sale",
+            "candidateEntities": [
+              "Sales",
+              "Sale items"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Product catalogue",
+            "candidateEntities": [
+              "Products"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Stock control",
+            "candidateEntities": [
+              "Stock movements"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Purchasing",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Suppliers",
+            "candidateEntities": [
+              "Suppliers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Customer accounts",
+            "candidateEntities": [
+              "Customers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Discounts & promotions",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Returns",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Branch management",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Cash-up",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Sales reports",
+            "candidateEntities": [
+              "Sales",
+              "Sale items"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Loyalty",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Purchase → Receive → Stock",
+            "stages": [
+              "Purchase",
+              "Receive",
+              "Stock"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Purchase",
+                "candidateEntities": [
+                  "Purchase orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Receive",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Stock",
+                "candidateEntities": [
+                  "Stock movements"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Sale → Payment → Receipt",
+            "stages": [
+              "Sale",
+              "Payment",
+              "Receipt"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Sale",
+                "candidateEntities": [
+                  "Sales",
+                  "Sale items"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Receipt",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Return → Inspection → Resolution",
+            "stages": [
+              "Return",
+              "Inspection",
+              "Resolution"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Return",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Inspection",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Resolution",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Reorder → Supplier → Delivery",
+            "stages": [
+              "Reorder",
+              "Supplier",
+              "Delivery"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Reorder",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Supplier",
+                "candidateEntities": [
+                  "Suppliers"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Delivery",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "finance",
+      "displayedName": "SAKATA Finance OS",
+      "icon": "◎",
+      "category": "Finance",
+      "tagline": "Financial operations and accountable records",
+      "description": "A financial operations foundation for tracking income, expenditure, receivables, payables, budgets, reconciliations and management reporting.",
+      "audience": "Businesses and institutions that need financial visibility",
+      "productPromise": "Make every financial movement traceable to its source.",
+      "modules": [
+        "Chart of accounts",
+        "General ledger",
+        "Accounts receivable",
+        "Accounts payable",
+        "Cash & bank",
+        "Budgets",
+        "Expenses",
+        "Reconciliation",
+        "Financial periods",
+        "Statements",
+        "Audit trail",
+        "Management reports"
+      ],
+      "capabilities": [
+        "Configurable account structures",
+        "Source-linked transactions",
+        "Receivable and payable tracking",
+        "Bank reconciliation workflows",
+        "Budget-versus-actual views",
+        "Period controls",
+        "Approval and audit history"
+      ],
+      "workflows": [
+        "Transaction → Review → Posting",
+        "Invoice → Receipt → Allocation",
+        "Bill → Approval → Payment",
+        "Statement → Matching → Reconciliation"
+      ],
+      "coreRecords": [
+        "Accounts",
+        "Journal entries",
+        "Journal lines",
+        "Invoices",
+        "Bills",
+        "Payments",
+        "Budgets",
+        "Bank transactions",
+        "Financial periods"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Accounts",
+          "Journal entries",
+          "Journal lines",
+          "Invoices",
+          "Bills",
+          "Payments",
+          "Budgets",
+          "Bank transactions",
+          "Financial periods"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Chart of accounts",
+            "candidateEntities": [
+              "Accounts"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "General ledger",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Accounts receivable",
+            "candidateEntities": [
+              "Accounts"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Accounts payable",
+            "candidateEntities": [
+              "Accounts"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Cash & bank",
+            "candidateEntities": [
+              "Bank transactions"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Budgets",
+            "candidateEntities": [
+              "Budgets"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Expenses",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Reconciliation",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Financial periods",
+            "candidateEntities": [
+              "Financial periods"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Statements",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Audit trail",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Management reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Transaction → Review → Posting",
+            "stages": [
+              "Transaction",
+              "Review",
+              "Posting"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Transaction",
+                "candidateEntities": [
+                  "Bank transactions"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Posting",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Invoice → Receipt → Allocation",
+            "stages": [
+              "Invoice",
+              "Receipt",
+              "Allocation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Invoice",
+                "candidateEntities": [
+                  "Invoices"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Receipt",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Allocation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Bill → Approval → Payment",
+            "stages": [
+              "Bill",
+              "Approval",
+              "Payment"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Bill",
+                "candidateEntities": [
+                  "Bills"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Statement → Matching → Reconciliation",
+            "stages": [
+              "Statement",
+              "Matching",
+              "Reconciliation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Statement",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Matching",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Reconciliation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "fleet",
+      "displayedName": "SAKATA Fleet & Mobility OS",
+      "icon": "↗",
+      "category": "Operations",
+      "tagline": "Vehicles, transport and fleet operations",
+      "description": "A fleet operations platform for vehicles, drivers, assignments, trips, fuel, maintenance, incidents and operating costs.",
+      "audience": "Transport operators, logistics teams and fleet owners",
+      "productPromise": "Connect every vehicle to its people, trips, condition and cost.",
+      "modules": [
+        "Vehicle register",
+        "Drivers",
+        "Trip planning",
+        "Dispatch",
+        "Fuel management",
+        "Maintenance",
+        "Inspections",
+        "Incidents",
+        "Licences & compliance",
+        "Expenses",
+        "Utilisation",
+        "Fleet analytics"
+      ],
+      "capabilities": [
+        "Vehicle and document expiry tracking",
+        "Driver assignment",
+        "Trip and route records",
+        "Fuel consumption tracking",
+        "Service schedules",
+        "Incident recording",
+        "Cost per vehicle and trip"
+      ],
+      "workflows": [
+        "Trip request → Approval → Dispatch",
+        "Inspection → Defect → Repair",
+        "Fuel issue → Trip allocation → Review",
+        "Service due → Workshop → Release"
+      ],
+      "coreRecords": [
+        "Vehicles",
+        "Drivers",
+        "Trips",
+        "Assignments",
+        "Fuel transactions",
+        "Maintenance jobs",
+        "Inspections",
+        "Incidents",
+        "Vehicle documents"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Vehicles",
+          "Drivers",
+          "Trips",
+          "Assignments",
+          "Fuel transactions",
+          "Maintenance jobs",
+          "Inspections",
+          "Incidents",
+          "Vehicle documents"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Vehicle register",
+            "candidateEntities": [
+              "Vehicles",
+              "Vehicle documents"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Drivers",
+            "candidateEntities": [
+              "Drivers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Trip planning",
+            "candidateEntities": [
+              "Trips"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Dispatch",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Fuel management",
+            "candidateEntities": [
+              "Fuel transactions"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Maintenance",
+            "candidateEntities": [
+              "Maintenance jobs"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Inspections",
+            "candidateEntities": [
+              "Inspections"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Incidents",
+            "candidateEntities": [
+              "Incidents"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Licences & compliance",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Expenses",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Utilisation",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Fleet analytics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Trip request → Approval → Dispatch",
+            "stages": [
+              "Trip request",
+              "Approval",
+              "Dispatch"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Trip request",
+                "candidateEntities": [
+                  "Trips"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Dispatch",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Inspection → Defect → Repair",
+            "stages": [
+              "Inspection",
+              "Defect",
+              "Repair"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Inspection",
+                "candidateEntities": [
+                  "Inspections"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Defect",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Repair",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Fuel issue → Trip allocation → Review",
+            "stages": [
+              "Fuel issue",
+              "Trip allocation",
+              "Review"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Fuel issue",
+                "candidateEntities": [
+                  "Fuel transactions"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Trip allocation",
+                "candidateEntities": [
+                  "Trips"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Service due → Workshop → Release",
+            "stages": [
+              "Service due",
+              "Workshop",
+              "Release"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Service due",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Workshop",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Release",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "property",
+      "displayedName": "SAKATA Property OS",
+      "icon": "⌂",
+      "category": "Operations",
+      "tagline": "Property portfolios, tenants and facilities",
+      "description": "A property management system for buildings, units, leases, tenants, rent schedules, maintenance requests and occupancy performance.",
+      "audience": "Landlords, property managers and real estate operators",
+      "productPromise": "See each property, unit, lease, obligation and outstanding balance.",
+      "modules": [
+        "Property portfolio",
+        "Buildings & units",
+        "Tenants",
+        "Leases",
+        "Rent schedules",
+        "Collections",
+        "Deposits",
+        "Maintenance",
+        "Inspections",
+        "Utilities",
+        "Documents",
+        "Occupancy reports"
+      ],
+      "capabilities": [
+        "Unit availability and occupancy",
+        "Lease term and renewal tracking",
+        "Scheduled charges",
+        "Tenant balances",
+        "Maintenance assignment",
+        "Property document management",
+        "Portfolio-level reporting"
+      ],
+      "workflows": [
+        "Enquiry → Viewing → Application",
+        "Application → Lease → Handover",
+        "Charge → Payment → Allocation",
+        "Issue → Work order → Resolution"
+      ],
+      "coreRecords": [
+        "Properties",
+        "Units",
+        "Tenants",
+        "Leases",
+        "Charges",
+        "Payments",
+        "Deposits",
+        "Work orders",
+        "Inspections"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Properties",
+          "Units",
+          "Tenants",
+          "Leases",
+          "Charges",
+          "Payments",
+          "Deposits",
+          "Work orders",
+          "Inspections"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Property portfolio",
+            "candidateEntities": [
+              "Properties"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Buildings & units",
+            "candidateEntities": [
+              "Units"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Tenants",
+            "candidateEntities": [
+              "Tenants"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Leases",
+            "candidateEntities": [
+              "Leases"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Rent schedules",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Collections",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Deposits",
+            "candidateEntities": [
+              "Deposits"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Maintenance",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Inspections",
+            "candidateEntities": [
+              "Inspections"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Utilities",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Documents",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Occupancy reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Enquiry → Viewing → Application",
+            "stages": [
+              "Enquiry",
+              "Viewing",
+              "Application"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Enquiry",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Viewing",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Application",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Application → Lease → Handover",
+            "stages": [
+              "Application",
+              "Lease",
+              "Handover"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Application",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Lease",
+                "candidateEntities": [
+                  "Leases"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Handover",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Charge → Payment → Allocation",
+            "stages": [
+              "Charge",
+              "Payment",
+              "Allocation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Charge",
+                "candidateEntities": [
+                  "Charges"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Allocation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Issue → Work order → Resolution",
+            "stages": [
+              "Issue",
+              "Work order",
+              "Resolution"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Issue",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Work order",
+                "candidateEntities": [
+                  "Work orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Resolution",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "hospitality",
+      "displayedName": "SAKATA Hospitality OS",
+      "icon": "✳",
+      "category": "Services",
+      "tagline": "Hotels, lodges and guest operations",
+      "description": "A hospitality operating system connecting reservations, rooms, guests, check-in, housekeeping, service requests, billing and guest experience.",
+      "audience": "Hotels, lodges, serviced apartments and guest houses",
+      "productPromise": "Coordinate the guest journey from booking to checkout.",
+      "modules": [
+        "Reservations",
+        "Room inventory",
+        "Guest profiles",
+        "Check-in & checkout",
+        "Housekeeping",
+        "Front desk",
+        "Guest requests",
+        "Billing",
+        "Rates & availability",
+        "Maintenance",
+        "Staff shifts",
+        "Occupancy analytics"
+      ],
+      "capabilities": [
+        "Room status and availability",
+        "Reservation lifecycle",
+        "Guest identity and preferences",
+        "Housekeeping task queues",
+        "Charges and folios",
+        "Maintenance coordination",
+        "Occupancy and revenue reporting"
+      ],
+      "workflows": [
+        "Reservation → Confirmation → Arrival",
+        "Arrival → Check-in → Room assignment",
+        "Request → Assignment → Service",
+        "Checkout → Folio review → Settlement"
+      ],
+      "coreRecords": [
+        "Rooms",
+        "Room types",
+        "Reservations",
+        "Guests",
+        "Stays",
+        "Charges",
+        "Payments",
+        "Housekeeping tasks",
+        "Maintenance requests"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Rooms",
+          "Room types",
+          "Reservations",
+          "Guests",
+          "Stays",
+          "Charges",
+          "Payments",
+          "Housekeeping tasks",
+          "Maintenance requests"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Reservations",
+            "candidateEntities": [
+              "Reservations"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Room inventory",
+            "candidateEntities": [
+              "Rooms",
+              "Room types"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Guest profiles",
+            "candidateEntities": [
+              "Guests"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Check-in & checkout",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Housekeeping",
+            "candidateEntities": [
+              "Housekeeping tasks"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Front desk",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Guest requests",
+            "candidateEntities": [
+              "Guests",
+              "Maintenance requests"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Billing",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Rates & availability",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Maintenance",
+            "candidateEntities": [
+              "Maintenance requests"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Staff shifts",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Occupancy analytics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Reservation → Confirmation → Arrival",
+            "stages": [
+              "Reservation",
+              "Confirmation",
+              "Arrival"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Reservation",
+                "candidateEntities": [
+                  "Reservations"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Confirmation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Arrival",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Arrival → Check-in → Room assignment",
+            "stages": [
+              "Arrival",
+              "Check-in",
+              "Room assignment"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Arrival",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Check-in",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Room assignment",
+                "candidateEntities": [
+                  "Rooms",
+                  "Room types"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Request → Assignment → Service",
+            "stages": [
+              "Request",
+              "Assignment",
+              "Service"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Request",
+                "candidateEntities": [
+                  "Maintenance requests"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Assignment",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Service",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Checkout → Folio review → Settlement",
+            "stages": [
+              "Checkout",
+              "Folio review",
+              "Settlement"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Checkout",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Folio review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Settlement",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "garage",
+      "displayedName": "SAKATA Garage OS",
+      "icon": "⌘",
+      "category": "Operations",
+      "tagline": "Workshops, repairs and vehicle servicing",
+      "description": "A workshop management system for customer vehicles, diagnostics, quotations, job cards, technicians, parts, labour and service history.",
+      "audience": "Garages, mechanics, service centres and repair chains",
+      "productPromise": "Track every vehicle from check-in to completed work.",
+      "modules": [
+        "Customer vehicles",
+        "Bookings",
+        "Vehicle inspections",
+        "Diagnostics",
+        "Estimates",
+        "Job cards",
+        "Technicians",
+        "Parts inventory",
+        "Labour tracking",
+        "Invoices",
+        "Warranty claims",
+        "Service history"
+      ],
+      "capabilities": [
+        "Vehicle history by registration or VIN",
+        "Customer-approved estimates",
+        "Technician and bay allocation",
+        "Parts reservation and consumption",
+        "Labour and job costing",
+        "Quality checks",
+        "Repair status visibility"
+      ],
+      "workflows": [
+        "Booking → Inspection → Estimate",
+        "Estimate → Customer approval → Job card",
+        "Parts issue → Repair → Quality check",
+        "Completed job → Invoice → Handover"
+      ],
+      "coreRecords": [
+        "Customers",
+        "Vehicles",
+        "Bookings",
+        "Inspections",
+        "Estimates",
+        "Job cards",
+        "Technicians",
+        "Parts",
+        "Invoices"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Customers",
+          "Vehicles",
+          "Bookings",
+          "Inspections",
+          "Estimates",
+          "Job cards",
+          "Technicians",
+          "Parts",
+          "Invoices"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Customer vehicles",
+            "candidateEntities": [
+              "Customers",
+              "Vehicles"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Bookings",
+            "candidateEntities": [
+              "Bookings"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Vehicle inspections",
+            "candidateEntities": [
+              "Vehicles",
+              "Inspections"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Diagnostics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Estimates",
+            "candidateEntities": [
+              "Estimates"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Job cards",
+            "candidateEntities": [
+              "Job cards"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Technicians",
+            "candidateEntities": [
+              "Technicians"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Parts inventory",
+            "candidateEntities": [
+              "Parts"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Labour tracking",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Invoices",
+            "candidateEntities": [
+              "Invoices"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Warranty claims",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Service history",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Booking → Inspection → Estimate",
+            "stages": [
+              "Booking",
+              "Inspection",
+              "Estimate"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Booking",
+                "candidateEntities": [
+                  "Bookings"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Inspection",
+                "candidateEntities": [
+                  "Inspections"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Estimate",
+                "candidateEntities": [
+                  "Estimates"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Estimate → Customer approval → Job card",
+            "stages": [
+              "Estimate",
+              "Customer approval",
+              "Job card"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Estimate",
+                "candidateEntities": [
+                  "Estimates"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Customer approval",
+                "candidateEntities": [
+                  "Customers"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Job card",
+                "candidateEntities": [
+                  "Job cards"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Parts issue → Repair → Quality check",
+            "stages": [
+              "Parts issue",
+              "Repair",
+              "Quality check"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Parts issue",
+                "candidateEntities": [
+                  "Parts"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Repair",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Quality check",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Completed job → Invoice → Handover",
+            "stages": [
+              "Completed job",
+              "Invoice",
+              "Handover"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Completed job",
+                "candidateEntities": [
+                  "Job cards"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Invoice",
+                "candidateEntities": [
+                  "Invoices"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Handover",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "parking",
+      "displayedName": "SAKATA Parking & Access OS",
+      "icon": "▤",
+      "category": "Operations",
+      "tagline": "Parking facilities, permits and controlled entry",
+      "description": "A facility operations system for parking areas, bays, permits, visitors, access events, sessions, tariffs and collections.",
+      "audience": "Parking operators, estates, campuses and commercial facilities",
+      "productPromise": "Account for access, occupancy and parking charges in one system.",
+      "modules": [
+        "Parking locations",
+        "Zones & bays",
+        "Permits",
+        "Visitor access",
+        "Parking sessions",
+        "Tariffs",
+        "Payments",
+        "Access logs",
+        "Enforcement",
+        "Equipment",
+        "Operator shifts",
+        "Utilisation reports"
+      ],
+      "capabilities": [
+        "Permit and vehicle registration",
+        "Session start and end tracking",
+        "Configurable tariff rules",
+        "Visitor and contractor records",
+        "Access event audit trail",
+        "Occupancy monitoring",
+        "Payment reconciliation"
+      ],
+      "workflows": [
+        "Visitor request → Authorisation → Entry",
+        "Vehicle entry → Session → Exit",
+        "Permit application → Approval → Activation",
+        "Charge → Payment → Reconciliation"
+      ],
+      "coreRecords": [
+        "Facilities",
+        "Zones",
+        "Bays",
+        "Vehicles",
+        "Permits",
+        "Visitors",
+        "Sessions",
+        "Access events",
+        "Tariffs",
+        "Payments"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Facilities",
+          "Zones",
+          "Bays",
+          "Vehicles",
+          "Permits",
+          "Visitors",
+          "Sessions",
+          "Access events",
+          "Tariffs",
+          "Payments"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Parking locations",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Zones & bays",
+            "candidateEntities": [
+              "Zones",
+              "Bays"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Permits",
+            "candidateEntities": [
+              "Permits"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Visitor access",
+            "candidateEntities": [
+              "Visitors",
+              "Access events"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Parking sessions",
+            "candidateEntities": [
+              "Sessions"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Tariffs",
+            "candidateEntities": [
+              "Tariffs"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Payments",
+            "candidateEntities": [
+              "Payments"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Access logs",
+            "candidateEntities": [
+              "Access events"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Enforcement",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Equipment",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Operator shifts",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Utilisation reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Visitor request → Authorisation → Entry",
+            "stages": [
+              "Visitor request",
+              "Authorisation",
+              "Entry"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Visitor request",
+                "candidateEntities": [
+                  "Visitors"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Authorisation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Entry",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Vehicle entry → Session → Exit",
+            "stages": [
+              "Vehicle entry",
+              "Session",
+              "Exit"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Vehicle entry",
+                "candidateEntities": [
+                  "Vehicles"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Session",
+                "candidateEntities": [
+                  "Sessions"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Exit",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Permit application → Approval → Activation",
+            "stages": [
+              "Permit application",
+              "Approval",
+              "Activation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Permit application",
+                "candidateEntities": [
+                  "Permits"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Activation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Charge → Payment → Reconciliation",
+            "stages": [
+              "Charge",
+              "Payment",
+              "Reconciliation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Charge",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Reconciliation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "manufacturing",
+      "displayedName": "SAKATA Manufacturing OS",
+      "icon": "▥",
+      "category": "Industry",
+      "tagline": "Production, materials and quality control",
+      "description": "An operations system connecting bills of materials, production orders, raw materials, work centres, quality checks, finished goods and production costs.",
+      "audience": "Manufacturers, workshops and production businesses",
+      "productPromise": "Connect production plans to materials, output, quality and cost.",
+      "modules": [
+        "Product specifications",
+        "Bills of materials",
+        "Production planning",
+        "Work orders",
+        "Work centres",
+        "Material issue",
+        "Quality control",
+        "Finished goods",
+        "Waste & scrap",
+        "Maintenance",
+        "Production costing",
+        "Performance reports"
+      ],
+      "capabilities": [
+        "Production order scheduling",
+        "Material requirements",
+        "Consumption and yield records",
+        "Batch and lot traceability",
+        "Quality checkpoints",
+        "Scrap recording",
+        "Planned-versus-actual production"
+      ],
+      "workflows": [
+        "Demand → Plan → Work order",
+        "Work order → Material issue → Production",
+        "Production → Quality inspection → Release",
+        "Finished goods → Stock → Dispatch"
+      ],
+      "coreRecords": [
+        "Products",
+        "Bills of materials",
+        "Materials",
+        "Work orders",
+        "Work centres",
+        "Batches",
+        "Quality checks",
+        "Scrap records",
+        "Finished goods"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Products",
+          "Bills of materials",
+          "Materials",
+          "Work orders",
+          "Work centres",
+          "Batches",
+          "Quality checks",
+          "Scrap records",
+          "Finished goods"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Product specifications",
+            "candidateEntities": [
+              "Products"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Bills of materials",
+            "candidateEntities": [
+              "Bills of materials",
+              "Materials"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Production planning",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Work orders",
+            "candidateEntities": [
+              "Work orders",
+              "Work centres"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Work centres",
+            "candidateEntities": [
+              "Work orders",
+              "Work centres"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Material issue",
+            "candidateEntities": [
+              "Bills of materials",
+              "Materials"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Quality control",
+            "candidateEntities": [
+              "Quality checks"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Finished goods",
+            "candidateEntities": [
+              "Finished goods"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Waste & scrap",
+            "candidateEntities": [
+              "Scrap records"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Maintenance",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Production costing",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Performance reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Demand → Plan → Work order",
+            "stages": [
+              "Demand",
+              "Plan",
+              "Work order"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Demand",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Plan",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Work order",
+                "candidateEntities": [
+                  "Work orders",
+                  "Work centres"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Work order → Material issue → Production",
+            "stages": [
+              "Work order",
+              "Material issue",
+              "Production"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Work order",
+                "candidateEntities": [
+                  "Work orders",
+                  "Work centres"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Material issue",
+                "candidateEntities": [
+                  "Bills of materials",
+                  "Materials"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Production",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Production → Quality inspection → Release",
+            "stages": [
+              "Production",
+              "Quality inspection",
+              "Release"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Production",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Quality inspection",
+                "candidateEntities": [
+                  "Quality checks"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Release",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Finished goods → Stock → Dispatch",
+            "stages": [
+              "Finished goods",
+              "Stock",
+              "Dispatch"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Finished goods",
+                "candidateEntities": [
+                  "Finished goods"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Stock",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Dispatch",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "microfinance",
+      "displayedName": "SAKATA Microfinance OS",
+      "icon": "◉",
+      "category": "Finance",
+      "tagline": "Loans, repayments and borrower management",
+      "description": "A lending operations platform for borrower onboarding, applications, assessment, approvals, disbursements, repayment schedules and arrears monitoring.",
+      "audience": "Microfinance institutions, SACCOs and lending organisations",
+      "productPromise": "Make the complete loan lifecycle visible and auditable.",
+      "modules": [
+        "Borrower onboarding",
+        "Applications",
+        "Assessments",
+        "Loan products",
+        "Approvals",
+        "Disbursement",
+        "Repayment schedules",
+        "Collections",
+        "Arrears",
+        "Guarantors",
+        "Cashier operations",
+        "Portfolio reporting"
+      ],
+      "capabilities": [
+        "Borrower and group records",
+        "Configurable product terms",
+        "Approval limits and segregation",
+        "Repayment schedules",
+        "Payment allocation",
+        "Delinquency monitoring",
+        "Portfolio-at-risk reporting"
+      ],
+      "workflows": [
+        "Application → Assessment → Decision",
+        "Approval → Agreement → Disbursement",
+        "Due instalment → Collection → Allocation",
+        "Arrears → Follow-up → Resolution"
+      ],
+      "coreRecords": [
+        "Borrowers",
+        "Loan applications",
+        "Loan products",
+        "Loans",
+        "Schedules",
+        "Repayments",
+        "Guarantors",
+        "Collections",
+        "Approvals"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Borrowers",
+          "Loan applications",
+          "Loan products",
+          "Loans",
+          "Schedules",
+          "Repayments",
+          "Guarantors",
+          "Collections",
+          "Approvals"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Borrower onboarding",
+            "candidateEntities": [
+              "Borrowers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Applications",
+            "candidateEntities": [
+              "Loan applications"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Assessments",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Loan products",
+            "candidateEntities": [
+              "Loan applications",
+              "Loan products",
+              "Loans"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Approvals",
+            "candidateEntities": [
+              "Approvals"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Disbursement",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Repayment schedules",
+            "candidateEntities": [
+              "Schedules",
+              "Repayments"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Collections",
+            "candidateEntities": [
+              "Collections"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Arrears",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Guarantors",
+            "candidateEntities": [
+              "Guarantors"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Cashier operations",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Portfolio reporting",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Application → Assessment → Decision",
+            "stages": [
+              "Application",
+              "Assessment",
+              "Decision"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Application",
+                "candidateEntities": [
+                  "Loan applications"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Assessment",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Decision",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Approval → Agreement → Disbursement",
+            "stages": [
+              "Approval",
+              "Agreement",
+              "Disbursement"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Approval",
+                "candidateEntities": [
+                  "Approvals"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Agreement",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Disbursement",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Due instalment → Collection → Allocation",
+            "stages": [
+              "Due instalment",
+              "Collection",
+              "Allocation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Due instalment",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Collection",
+                "candidateEntities": [
+                  "Collections"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Allocation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Arrears → Follow-up → Resolution",
+            "stages": [
+              "Arrears",
+              "Follow-up",
+              "Resolution"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Arrears",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Follow-up",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Resolution",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "supply",
+      "displayedName": "SAKATA Supply Chain OS",
+      "icon": "⇄",
+      "category": "Industry",
+      "tagline": "Procurement, warehouses and distribution",
+      "description": "A supply chain system connecting purchasing, supplier performance, goods receiving, warehouse stock, transfers, fulfilment and delivery.",
+      "audience": "Distributors, importers, wholesalers and procurement teams",
+      "productPromise": "Trace goods from supplier commitment to customer delivery.",
+      "modules": [
+        "Supplier directory",
+        "Requisitions",
+        "Purchase orders",
+        "Receiving",
+        "Warehouses",
+        "Bin locations",
+        "Stock transfers",
+        "Picking & packing",
+        "Dispatch",
+        "Deliveries",
+        "Supplier invoices",
+        "Supply analytics"
+      ],
+      "capabilities": [
+        "Purchase approval workflows",
+        "Expected-versus-received checks",
+        "Multi-warehouse inventory",
+        "Stock movement history",
+        "Order fulfilment",
+        "Delivery tracking",
+        "Supplier lead-time reporting"
+      ],
+      "workflows": [
+        "Requisition → Approval → Purchase order",
+        "Order → Receive → Inspect → Put away",
+        "Customer order → Pick → Pack → Dispatch",
+        "Delivery → Proof of receipt → Close"
+      ],
+      "coreRecords": [
+        "Suppliers",
+        "Requisitions",
+        "Purchase orders",
+        "Receipts",
+        "Warehouses",
+        "Locations",
+        "Stock transfers",
+        "Shipments",
+        "Deliveries"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Suppliers",
+          "Requisitions",
+          "Purchase orders",
+          "Receipts",
+          "Warehouses",
+          "Locations",
+          "Stock transfers",
+          "Shipments",
+          "Deliveries"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Supplier directory",
+            "candidateEntities": [
+              "Suppliers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Requisitions",
+            "candidateEntities": [
+              "Requisitions"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Purchase orders",
+            "candidateEntities": [
+              "Purchase orders"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Receiving",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Warehouses",
+            "candidateEntities": [
+              "Warehouses"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Bin locations",
+            "candidateEntities": [
+              "Locations"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Stock transfers",
+            "candidateEntities": [
+              "Stock transfers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Picking & packing",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Dispatch",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Deliveries",
+            "candidateEntities": [
+              "Deliveries"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Supplier invoices",
+            "candidateEntities": [
+              "Suppliers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Supply analytics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Requisition → Approval → Purchase order",
+            "stages": [
+              "Requisition",
+              "Approval",
+              "Purchase order"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Requisition",
+                "candidateEntities": [
+                  "Requisitions"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Purchase order",
+                "candidateEntities": [
+                  "Purchase orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Order → Receive → Inspect → Put away",
+            "stages": [
+              "Order",
+              "Receive",
+              "Inspect",
+              "Put away"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Order",
+                "candidateEntities": [
+                  "Purchase orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Receive",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Inspect",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Put away",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Customer order → Pick → Pack → Dispatch",
+            "stages": [
+              "Customer order",
+              "Pick",
+              "Pack",
+              "Dispatch"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Customer order",
+                "candidateEntities": [
+                  "Purchase orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Pick",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Pack",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Dispatch",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Delivery → Proof of receipt → Close",
+            "stages": [
+              "Delivery",
+              "Proof of receipt",
+              "Close"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Delivery",
+                "candidateEntities": [
+                  "Deliveries"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Proof of receipt",
+                "candidateEntities": [
+                  "Receipts"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Close",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "health",
+      "displayedName": "SAKATA Healthcare Administration OS",
+      "icon": "✚",
+      "category": "Services",
+      "tagline": "Patient-facing administration and facility operations",
+      "description": "An administrative operating system for appointments, patient registration, queues, facility resources, billing and service coordination. Clinical functionality must be configured to appropriate professional and regulatory standards.",
+      "audience": "Clinics, outpatient facilities and healthcare administrators",
+      "productPromise": "Coordinate facility operations while protecting sensitive records.",
+      "modules": [
+        "Patient registration",
+        "Appointments",
+        "Queue management",
+        "Provider schedules",
+        "Facility services",
+        "Billing administration",
+        "Payments",
+        "Resource allocation",
+        "Referrals",
+        "Document controls",
+        "User permissions",
+        "Operations reports"
+      ],
+      "capabilities": [
+        "Appointment and queue visibility",
+        "Patient identity management",
+        "Administrative billing records",
+        "Permission-controlled access",
+        "Referral status tracking",
+        "Activity audit trails",
+        "Operational capacity reporting"
+      ],
+      "workflows": [
+        "Appointment → Arrival → Queue",
+        "Registration → Service routing → Completion",
+        "Charge → Payment → Reconciliation",
+        "Referral → Acknowledgement → Follow-up"
+      ],
+      "coreRecords": [
+        "Patients",
+        "Appointments",
+        "Providers",
+        "Queues",
+        "Service encounters",
+        "Charges",
+        "Payments",
+        "Referrals",
+        "Access logs"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Patients",
+          "Appointments",
+          "Providers",
+          "Queues",
+          "Service encounters",
+          "Charges",
+          "Payments",
+          "Referrals",
+          "Access logs"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Patient registration",
+            "candidateEntities": [
+              "Patients"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Appointments",
+            "candidateEntities": [
+              "Appointments"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Queue management",
+            "candidateEntities": [
+              "Queues"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Provider schedules",
+            "candidateEntities": [
+              "Providers"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Facility services",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Billing administration",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Payments",
+            "candidateEntities": [
+              "Payments"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Resource allocation",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Referrals",
+            "candidateEntities": [
+              "Referrals"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Document controls",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "User permissions",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Operations reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Appointment → Arrival → Queue",
+            "stages": [
+              "Appointment",
+              "Arrival",
+              "Queue"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Appointment",
+                "candidateEntities": [
+                  "Appointments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Arrival",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Queue",
+                "candidateEntities": [
+                  "Queues"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Registration → Service routing → Completion",
+            "stages": [
+              "Registration",
+              "Service routing",
+              "Completion"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Registration",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Service routing",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Completion",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Charge → Payment → Reconciliation",
+            "stages": [
+              "Charge",
+              "Payment",
+              "Reconciliation"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Charge",
+                "candidateEntities": [
+                  "Charges"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Payment",
+                "candidateEntities": [
+                  "Payments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Reconciliation",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Referral → Acknowledgement → Follow-up",
+            "stages": [
+              "Referral",
+              "Acknowledgement",
+              "Follow-up"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Referral",
+                "candidateEntities": [
+                  "Referrals"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Acknowledgement",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Follow-up",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "construction",
+      "displayedName": "SAKATA Construction OS",
+      "icon": "⌗",
+      "category": "Industry",
+      "tagline": "Projects, sites, contractors and materials",
+      "description": "A project operations platform for construction schedules, site activities, budgets, procurement, materials, contractors, variations and progress reporting.",
+      "audience": "Contractors, developers, engineering teams and project managers",
+      "productPromise": "Connect site progress to cost, people, materials and decisions.",
+      "modules": [
+        "Project portfolio",
+        "Sites & work packages",
+        "Schedules",
+        "Tasks & milestones",
+        "Budgets",
+        "Procurement",
+        "Materials",
+        "Contractors",
+        "Site diaries",
+        "Variations",
+        "Inspections",
+        "Progress claims"
+      ],
+      "capabilities": [
+        "Project and milestone tracking",
+        "Site-level work allocation",
+        "Budget and commitment visibility",
+        "Materials receiving and issue",
+        "Variation approval records",
+        "Inspection and defect tracking",
+        "Progress evidence and reports"
+      ],
+      "workflows": [
+        "Scope → Plan → Baseline",
+        "Request → Purchase → Site delivery",
+        "Inspection → Defect → Rectification",
+        "Progress claim → Review → Approval"
+      ],
+      "coreRecords": [
+        "Projects",
+        "Sites",
+        "Milestones",
+        "Work packages",
+        "Budgets",
+        "Purchase orders",
+        "Materials",
+        "Contractors",
+        "Variations"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Projects",
+          "Sites",
+          "Milestones",
+          "Work packages",
+          "Budgets",
+          "Purchase orders",
+          "Materials",
+          "Contractors",
+          "Variations"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Project portfolio",
+            "candidateEntities": [
+              "Projects"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Sites & work packages",
+            "candidateEntities": [
+              "Sites",
+              "Work packages"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Schedules",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Tasks & milestones",
+            "candidateEntities": [
+              "Milestones"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Budgets",
+            "candidateEntities": [
+              "Budgets"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Procurement",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Materials",
+            "candidateEntities": [
+              "Materials"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Contractors",
+            "candidateEntities": [
+              "Contractors"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Site diaries",
+            "candidateEntities": [
+              "Sites"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Variations",
+            "candidateEntities": [
+              "Variations"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Inspections",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Progress claims",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Scope → Plan → Baseline",
+            "stages": [
+              "Scope",
+              "Plan",
+              "Baseline"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Scope",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Plan",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Baseline",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Request → Purchase → Site delivery",
+            "stages": [
+              "Request",
+              "Purchase",
+              "Site delivery"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Request",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Purchase",
+                "candidateEntities": [
+                  "Purchase orders"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Site delivery",
+                "candidateEntities": [
+                  "Sites"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Inspection → Defect → Rectification",
+            "stages": [
+              "Inspection",
+              "Defect",
+              "Rectification"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Inspection",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Defect",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Rectification",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Progress claim → Review → Approval",
+            "stages": [
+              "Progress claim",
+              "Review",
+              "Approval"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Progress claim",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "agriculture",
+      "displayedName": "SAKATA Agriculture OS",
+      "icon": "❋",
+      "category": "Industry",
+      "tagline": "Farms, field operations and produce",
+      "description": "An agricultural operations system for farms, plots, planting cycles, field activities, input usage, harvests, storage and produce sales.",
+      "audience": "Farms, cooperatives, agribusinesses and produce traders",
+      "productPromise": "Follow production from field preparation to harvested output.",
+      "modules": [
+        "Farm register",
+        "Plots & fields",
+        "Crop cycles",
+        "Planting plans",
+        "Field activities",
+        "Inputs & supplies",
+        "Labour",
+        "Equipment",
+        "Harvest records",
+        "Storage",
+        "Produce sales",
+        "Yield analytics"
+      ],
+      "capabilities": [
+        "Field and crop-cycle tracking",
+        "Input application records",
+        "Labour and equipment allocation",
+        "Harvest quantities and grading",
+        "Stock and storage tracking",
+        "Buyer and sale records",
+        "Yield and cost analysis"
+      ],
+      "workflows": [
+        "Plan → Prepare → Plant",
+        "Activity → Input issue → Field record",
+        "Harvest → Grade → Store",
+        "Order → Dispatch → Sale settlement"
+      ],
+      "coreRecords": [
+        "Farms",
+        "Fields",
+        "Crop cycles",
+        "Activities",
+        "Inputs",
+        "Labour records",
+        "Harvests",
+        "Lots",
+        "Buyers",
+        "Sales"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Farms",
+          "Fields",
+          "Crop cycles",
+          "Activities",
+          "Inputs",
+          "Labour records",
+          "Harvests",
+          "Lots",
+          "Buyers",
+          "Sales"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Farm register",
+            "candidateEntities": [
+              "Farms"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Plots & fields",
+            "candidateEntities": [
+              "Fields"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Crop cycles",
+            "candidateEntities": [
+              "Crop cycles"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Planting plans",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Field activities",
+            "candidateEntities": [
+              "Fields",
+              "Activities"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Inputs & supplies",
+            "candidateEntities": [
+              "Inputs"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Labour",
+            "candidateEntities": [
+              "Labour records"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Equipment",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Harvest records",
+            "candidateEntities": [
+              "Harvests"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Storage",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Produce sales",
+            "candidateEntities": [
+              "Sales"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Yield analytics",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Plan → Prepare → Plant",
+            "stages": [
+              "Plan",
+              "Prepare",
+              "Plant"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Plan",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Prepare",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Plant",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Activity → Input issue → Field record",
+            "stages": [
+              "Activity",
+              "Input issue",
+              "Field record"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Activity",
+                "candidateEntities": [
+                  "Activities"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Input issue",
+                "candidateEntities": [
+                  "Inputs"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Field record",
+                "candidateEntities": [
+                  "Fields"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Harvest → Grade → Store",
+            "stages": [
+              "Harvest",
+              "Grade",
+              "Store"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Harvest",
+                "candidateEntities": [
+                  "Harvests"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Grade",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Store",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Order → Dispatch → Sale settlement",
+            "stages": [
+              "Order",
+              "Dispatch",
+              "Sale settlement"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Order",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Dispatch",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Sale settlement",
+                "candidateEntities": [
+                  "Sales"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    },
+    {
+      "id": "workforce",
+      "displayedName": "SAKATA Workforce OS",
+      "icon": "⌘",
+      "category": "Business",
+      "tagline": "People, shifts, attendance and service teams",
+      "description": "A workforce operations system for staff records, shifts, attendance, leave, assignments, field teams, service requests and performance.",
+      "audience": "Service businesses, distributed teams and multi-site employers",
+      "productPromise": "Know who is responsible, where work stands and what needs attention.",
+      "modules": [
+        "Employee directory",
+        "Teams & roles",
+        "Shift planning",
+        "Attendance",
+        "Leave requests",
+        "Work assignments",
+        "Field service",
+        "Timesheets",
+        "Expenses",
+        "Equipment allocation",
+        "Performance reviews",
+        "Workforce reports"
+      ],
+      "capabilities": [
+        "Shift and availability planning",
+        "Attendance exceptions",
+        "Leave approval workflows",
+        "Assignment and workload tracking",
+        "Timesheet review",
+        "Equipment accountability",
+        "Team-level service performance"
+      ],
+      "workflows": [
+        "Shift plan → Assignment → Attendance",
+        "Leave request → Review → Decision",
+        "Service request → Dispatch → Completion",
+        "Timesheet → Approval → Export"
+      ],
+      "coreRecords": [
+        "Employees",
+        "Teams",
+        "Shifts",
+        "Attendance",
+        "Leave requests",
+        "Assignments",
+        "Timesheets",
+        "Expenses",
+        "Equipment"
+      ],
+      "candidateModel": {
+        "candidateEntities": [
+          "Employees",
+          "Teams",
+          "Shifts",
+          "Attendance",
+          "Leave requests",
+          "Assignments",
+          "Timesheets",
+          "Expenses",
+          "Equipment"
+        ],
+        "moduleCandidateMappings": [
+          {
+            "label": "Employee directory",
+            "candidateEntities": [
+              "Employees"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Teams & roles",
+            "candidateEntities": [
+              "Teams"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Shift planning",
+            "candidateEntities": [
+              "Shifts"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Attendance",
+            "candidateEntities": [
+              "Attendance"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Leave requests",
+            "candidateEntities": [
+              "Leave requests"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Work assignments",
+            "candidateEntities": [
+              "Assignments"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Field service",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Timesheets",
+            "candidateEntities": [
+              "Timesheets"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Expenses",
+            "candidateEntities": [
+              "Expenses"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Equipment allocation",
+            "candidateEntities": [
+              "Equipment"
+            ],
+            "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+          },
+          {
+            "label": "Performance reviews",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          },
+          {
+            "label": "Workforce reports",
+            "candidateEntities": [],
+            "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+          }
+        ],
+        "candidateWorkflowRelationships": [
+          {
+            "workflow": "Shift plan → Assignment → Attendance",
+            "stages": [
+              "Shift plan",
+              "Assignment",
+              "Attendance"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Shift plan",
+                "candidateEntities": [
+                  "Shifts"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Assignment",
+                "candidateEntities": [
+                  "Assignments"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Attendance",
+                "candidateEntities": [
+                  "Attendance"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Leave request → Review → Decision",
+            "stages": [
+              "Leave request",
+              "Review",
+              "Decision"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Leave request",
+                "candidateEntities": [
+                  "Leave requests"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Review",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Decision",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Service request → Dispatch → Completion",
+            "stages": [
+              "Service request",
+              "Dispatch",
+              "Completion"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Service request",
+                "candidateEntities": [
+                  "Leave requests"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Dispatch",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Completion",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          },
+          {
+            "workflow": "Timesheet → Approval → Export",
+            "stages": [
+              "Timesheet",
+              "Approval",
+              "Export"
+            ],
+            "stageEntityCandidates": [
+              {
+                "label": "Timesheet",
+                "candidateEntities": [
+                  "Timesheets"
+                ],
+                "mappingStatus": "catalogue-text-overlap candidate; confirm with domain owner"
+              },
+              {
+                "label": "Approval",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              },
+              {
+                "label": "Export",
+                "candidateEntities": [],
+                "mappingStatus": "UNMAPPED: no corresponding core-record label; domain decision required"
+              }
+            ],
+            "relationshipStatus": "catalogue workflow sequence only; entity keys, cardinality, transition guards and persistence require domain decisions"
+          }
+        ],
+        "candidateConstraints": [
+          "Every tenant-owned row must carry an organization key and be protected by server authorization and database RLS.",
+          "Cross-record references must not permit a foreign organization key; use organization-scoped foreign-key/uniqueness strategies where the final schema warrants them.",
+          "Identity, organization ownership, creator, and immutable audit facts require explicit update protections.",
+          "Record lifecycle, deletion/archive policy, retention, and idempotency rules are not specified by the catalogue."
+        ],
+        "candidatePermissions": [
+          "Product- and organization-scoped read permission for the listed records.",
+          "Separate create/update/archive or manage permissions for operational records.",
+          "Separate approve/decide permissions for workflows with approval or decision stages.",
+          "Least-privilege access for financial, health, identity, personnel, and other sensitive records; field-level rules require domain review."
+        ]
+      }
+    }
+  ],
+  "candidateMappingSummary": {
+    "moduleMappings": 192,
+    "moduleMappingsWithTextCandidates": 107,
+    "moduleMappingsUnmapped": 85,
+    "workflowStageMappings": 195,
+    "workflowStagesWithTextCandidates": 74,
+    "workflowStagesUnmapped": 121,
+    "interpretation": "Text-overlap counts are discovery pointers, not verified semantic or relational mappings."
+  }
+}

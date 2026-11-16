@@ -1,10 +1,13 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { requirePermission } from "@/app/lib/auth/authorization";
-import { validateEnrollmentInput } from "./validation";
+import {
+  isValidEnrollmentStatusTransition,
+  validateEnrollmentInput,
+} from "./validation";
 
 export type EnrollmentActionState = {
   success: boolean;
@@ -144,12 +147,60 @@ export async function updateEnrollment(
       notes,
     } = validateEnrollmentInput(formData);
 
+    const { data: existingEnrollment, error: existingError } =
+      await supabase
+        .from("student_enrollments")
+        .select(
+          "id, student_id, class_id, academic_period_id, status"
+        )
+        .eq("id", id)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+
+    if (existingError) {
+      return {
+        success: false,
+        error: getErrorMessage(existingError, "update"),
+      };
+    }
+
+    if (!existingEnrollment) {
+      return {
+        success: false,
+        error:
+          "Enrollment not found or you do not have access to it.",
+      };
+    }
+
+    if (
+      existingEnrollment.student_id !== studentId ||
+      existingEnrollment.class_id !== classId ||
+      existingEnrollment.academic_period_id !==
+        academicPeriodId
+    ) {
+      return {
+        success: false,
+        error:
+          "Student, class, and academic period cannot be changed after enrollment creation.",
+      };
+    }
+
+    if (
+      !isValidEnrollmentStatusTransition(
+        existingEnrollment.status,
+        status
+      )
+    ) {
+      return {
+        success: false,
+        error:
+          "A terminal enrollment cannot be reopened or moved to another status.",
+      };
+    }
+
     const { data, error } = await supabase
       .from("student_enrollments")
       .update({
-        student_id: studentId,
-        class_id: classId,
-        academic_period_id: academicPeriodId,
         enrollment_date: enrollmentDate,
         exit_date: exitDate,
         status,
@@ -161,14 +212,6 @@ export async function updateEnrollment(
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return {
-          success: false,
-          error:
-            "Enrollment not found or you do not have access to it.",
-        };
-      }
-
       return {
         success: false,
         error: getErrorMessage(error, "update"),
@@ -185,6 +228,7 @@ export async function updateEnrollment(
 
     revalidatePath("/school");
     revalidatePath("/school/enrollments");
+    revalidatePath("/school/attendance");
     revalidatePath("/school/students");
     revalidatePath("/school/classes");
 

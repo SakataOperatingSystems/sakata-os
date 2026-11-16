@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { requirePermission } from "@/app/lib/auth/authorization";
+import { emitPlatformEvent } from "@/app/lib/events/emitter";
 import { validateStudentInput } from "./validation";
 
 export type StudentActionState = {
   success: boolean;
   error: string | null;
+  studentId?: string | null;
 };
 
 function getErrorMessage(
@@ -21,7 +23,7 @@ function getErrorMessage(
     "code" in error &&
     error.code === "23505"
   ) {
-    return "A student with this Student ID already exists in this organization.";
+    return "A student with this identity already exists in this organization.";
   }
 
   if (
@@ -69,7 +71,6 @@ export async function createStudent(
     const supabase = await createClient();
 
     const {
-      studentId,
       fullName,
       gender,
       dateOfBirth,
@@ -81,26 +82,49 @@ export async function createStudent(
       notes,
     } = validateStudentInput(formData);
 
-    const { error } = await supabase.from("students").insert({
-      organization_id: organizationId,
-      student_id: studentId,
-      full_name: fullName,
-      gender,
-      date_of_birth: dateOfBirth,
-      admission_date: admissionDate,
-      nin,
-      status,
-      welfare_status: welfareStatus,
-      location,
-      notes,
-    });
+    const { data: student, error } = await supabase
+      .from("students")
+      .insert({
+        organization_id: organizationId,
+        full_name: fullName,
+        gender,
+        date_of_birth: dateOfBirth,
+        admission_date: admissionDate,
+        nin,
+        status,
+        welfare_status: welfareStatus,
+        location,
+        notes,
+      })
+      .select("id, student_id, full_name")
+      .single();
 
     if (error) {
       return {
         success: false,
         error: getErrorMessage(error, "create"),
+        studentId: null,
       };
     }
+
+    if (!student) {
+      return {
+        success: false,
+        error: "Student was not created because no record was returned.",
+        studentId: null,
+      };
+    }
+
+    await emitPlatformEvent({
+      organizationId,
+      eventType: "student.created",
+      entityType: "student",
+      entityId: student.id,
+      payload: {
+        student_id: student.student_id,
+        full_name: student.full_name,
+      },
+    });
 
     revalidatePath("/school");
     revalidatePath("/school/students");
@@ -108,11 +132,13 @@ export async function createStudent(
     return {
       success: true,
       error: null,
+      studentId: student.student_id,
     };
   } catch (error) {
     return {
       success: false,
       error: getErrorMessage(error, "create"),
+      studentId: null,
     };
   }
 }
@@ -132,12 +158,12 @@ export async function updateStudent(
     if (!id) {
       return {
         success: false,
-        error: "Student ID is required for an update.",
+        error: "Student record is required for an update.",
+        studentId: null,
       };
     }
 
     const {
-      studentId,
       fullName,
       gender,
       dateOfBirth,
@@ -152,7 +178,6 @@ export async function updateStudent(
     const { data, error } = await supabase
       .from("students")
       .update({
-        student_id: studentId,
         full_name: fullName,
         gender,
         date_of_birth: dateOfBirth,
@@ -165,7 +190,7 @@ export async function updateStudent(
       })
       .eq("id", id)
       .eq("organization_id", organizationId)
-      .select("id")
+      .select("id, student_id")
       .single();
 
     if (error) {
@@ -173,12 +198,14 @@ export async function updateStudent(
         return {
           success: false,
           error: "Student not found or you do not have access to it.",
+          studentId: null,
         };
       }
 
       return {
         success: false,
         error: getErrorMessage(error, "update"),
+        studentId: null,
       };
     }
 
@@ -187,6 +214,7 @@ export async function updateStudent(
         success: false,
         error:
           "Student was not updated because the record could not be found.",
+        studentId: null,
       };
     }
 
@@ -196,11 +224,13 @@ export async function updateStudent(
     return {
       success: true,
       error: null,
+      studentId: data.student_id,
     };
   } catch (error) {
     return {
       success: false,
       error: getErrorMessage(error, "update"),
+      studentId: null,
     };
   }
 }

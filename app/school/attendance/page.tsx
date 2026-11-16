@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import {
   hasPermission,
   requirePermission,
@@ -119,6 +119,38 @@ export default async function AttendancePage() {
       (item) => item.status === "excused"
     ).length ?? 0;
 
+  const today = new Date().toISOString().slice(0, 10);
+
+  const todayAttendance =
+    attendance?.filter((item) => item.attendance_date === today) ?? [];
+
+  const todayAttendanceByEnrollment = new Map(
+    todayAttendance.map((item) => [item.enrollment_id, item])
+  );
+
+  const activeEnrollments =
+    enrollments?.filter((item) => item.status === "active") ?? [];
+
+  const missingToday = activeEnrollments.filter(
+    (enrollment) => !todayAttendanceByEnrollment.has(enrollment.id)
+  );
+
+  const todayPresentCount = todayAttendance.filter(
+    (item) => item.status === "present"
+  ).length;
+
+  const todayAbsentCount = todayAttendance.filter(
+    (item) => item.status === "absent"
+  ).length;
+
+  const todayLateCount = todayAttendance.filter(
+    (item) => item.status === "late"
+  ).length;
+
+  const todayExcusedCount = todayAttendance.filter(
+    (item) => item.status === "excused"
+  ).length;
+
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-7xl">
@@ -196,8 +228,100 @@ export default async function AttendancePage() {
           </div>
         </div>
 
+        <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Daily operations
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">
+                Today&apos;s attendance
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {today} · active enrollments requiring an attendance outcome
+              </p>
+            </div>
+            <div className="text-sm text-slate-400">
+              {missingToday.length} missing
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-6">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Active</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{activeEnrollments.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Recorded</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{todayAttendance.length}</p>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-amber-300">Missing</p>
+              <p className="mt-2 text-2xl font-semibold text-amber-200">{missingToday.length}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-emerald-300">Present</p>
+              <p className="mt-2 text-2xl font-semibold text-emerald-200">{todayPresentCount}</p>
+            </div>
+            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-red-300">Absent</p>
+              <p className="mt-2 text-2xl font-semibold text-red-200">{todayAbsentCount}</p>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-amber-300">Late / excused</p>
+              <p className="mt-2 text-2xl font-semibold text-amber-200">{todayLateCount + todayExcusedCount}</p>
+            </div>
+          </div>
+
+          {missingToday.length > 0 ? (
+            <div className="mt-6 overflow-hidden rounded-xl border border-slate-800">
+              <div className="border-b border-slate-800 px-4 py-3">
+                <h3 className="text-sm font-medium text-white">Missing attendance</h3>
+              </div>
+              <div className="divide-y divide-slate-800">
+                {missingToday.map((enrollment) => {
+                  const student = Array.isArray(enrollment.student)
+                    ? enrollment.student[0]
+                    : enrollment.student;
+                  const classItem = Array.isArray(enrollment.classItem)
+                    ? enrollment.classItem[0]
+                    : enrollment.classItem;
+
+                  return (
+                    <div
+                      key={enrollment.id}
+                      className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium text-white">
+                          {student?.full_name ?? "Unknown student"}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {classItem?.name ?? "Unknown class"}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/school/attendance?enrollment_id=${encodeURIComponent(enrollment.id)}#record-attendance`}
+                        className="text-sm font-medium text-slate-300 hover:text-white"
+                      >
+                        Record attendance
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-4">
+              <p className="text-sm font-medium text-emerald-200">
+                All active enrollments have attendance recorded for today.
+              </p>
+            </div>
+          )}
+        </section>
+
         {canManage && (
-          <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <section id="record-attendance" className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-medium">
                 Record attendance

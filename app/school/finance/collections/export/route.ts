@@ -1,0 +1,140 @@
+import { requirePermission } from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { createClient } from "@/app/lib/supabase/server";
+
+function validDate(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+function csv(value: string | number) {
+  const text = String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+export async function GET(request: Request) {
+  await requirePermission("school.fees.read");
+  const { organizationId } = await getOrganizationContext();
+  const supabase = await createClient();
+
+  const { data: tenantSettings } = await supabase
+    .from("organization_settings")
+    .select("timezone, currency_code, locale")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  const configuredCurrency =
+    typeof tenantSettings?.currency_code === "string" &&
+    /^[A-Z]{3}$/.test(tenantSettings.currency_code)
+      ? tenantSettings.currency_code
+      : "UGX";
+  const configuredLocale =
+    typeof tenantSettings?.locale === "string" &&
+    tenantSettings.locale.trim()
+      ? tenantSettings.locale
+      : "en-UG";
+  const configuredTimezone =
+    typeof tenantSettings?.timezone === "string" &&
+    tenantSettings.timezone.trim()
+      ? tenantSettings.timezone
+      : "Africa/Kampala";
+  const url = new URL(request.url);
+  const date = validDate(url.searchParams.get("date"));
+  if (!date) {
+    return new Response("A valid date=YYYY-MM-DD is required.", { status: 400 });
+  }
+
+  const { data: payments, error } = await supabase
+    .from("school_fee_payments")
+    .select("student_fee_account_id, amount, payment_date, payment_method, reference, received_by_user_id")
+    .eq("organization_id", organizationId)
+    .eq("payment_date", date)
+    .eq("status", "confirmed")
+    .order("reference", { ascending: true });
+
+  if (error) {
+    console.error("Collections CSV query failed:", error.message);
+    return new Response("Unable to generate collections report.", { status: 500 });
+  }
+
+  const rows = payments ?? [];
+  const accountIds = [...new Set(rows.map((p) => p.student_fee_account_id))];
+  const receiverIds = [...new Set(rows.map((p) => p.received_by_user_id))];
+
+  const [{ data: accounts, error: accountError }, { data: receivers, error: receiverError }] =
+    await Promise.all([
+      accountIds.length
+        ? supabase.from("school_student_fee_accounts")
+            .select("id, student_id")
+            .eq("organization_id", organizationId)
+            .in("id", accountIds)
+        : Promise.resolve({ data: [], error: null }),
+      receiverIds.length
+        ? supabase.from("user_profiles")
+            .select("id, display_name")
+            .in("id", receiverIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  if (accountError || receiverError) {
+    return new Response("Unable to load report details.", { status: 500 });
+  }
+
+  const accountRows = accounts ?? [];
+  const studentIds = [...new Set(accountRows.map((a) => a.student_id))];
+  const { data: students, error: studentError } = studentIds.length
+    ? await supabase.from("students")
+        .select("id, full_name")
+        .eq("organization_id", organizationId)
+        .in("id", studentIds)
+    : { data: [], error: null };
+
+  if (studentError) {
+    return new Response("Unable to load student details.", { status: 500 });
+  }
+
+  const accountById = new Map(accountRows.map((a) => [a.id, a]));
+  const studentById = new Map((students ?? []).map((s) => [s.id, s.full_name]));
+  const receiverById = new Map(
+    (receivers ?? []).map((r) => [r.id, r.display_name ?? "Unnamed staff"]),
+  );
+
+  const header = [
+    "Collection Date",
+    "Payment Reference",
+    "Student",
+    "Payment Method",
+    "Received By",
+    `Amount ${configuredCurrency}`,
+  ];
+
+  const lines = [
+    header.map(csv).join(","),
+    ...rows.map((p) => {
+      const account = accountById.get(p.student_fee_account_id);
+      return [
+        p.payment_date,
+        p.reference,
+        studentById.get(account?.student_id ?? "") ?? "Unknown student",
+        p.payment_method,
+        receiverById.get(p.received_by_user_id) ?? "Unknown staff",
+        Number(p.amount).toFixed(0),
+      ].map(csv).join(",");
+    }),
+    ["", "", "", "", "TOTAL CONFIRMED COLLECTIONS", rows.reduce((sum, p) => sum + Number(p.amount), 0).toFixed(0)]
+      .map(csv).join(","),
+  ];
+
+  return new Response("\uFEFF" + lines.join("\r\n"), {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="daily-collections-${date}.csv"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}

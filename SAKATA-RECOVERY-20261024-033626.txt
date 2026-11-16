@@ -1,0 +1,1583 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20261024033626
+Username: IBRAHIMSAKATA\IBRAHIM SAKATA
+RunAs User: IBRAHIMSAKATA\IBRAHIM SAKATA
+Configuration Name: 
+Machine: IBRAHIMSAKATA (Microsoft Windows NT 10.0.22000.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\IBRAHIM SAKATA\AppData\Local\Programs\Microsoft VS Code\6d62b1d5da\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 18192
+PSVersion: 5.1.22000.2538
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.22000.2538
+BuildVersion: 10.0.22000.2538
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is .\SAKATA-RECOVERY-20261024-033626.txt
+
+===== 1. REPOSITORY STATE =====
+
+
+
+===== 2. REQUIRED AUTH FILES =====
+
+--- .\app\lib\auth\authorization.ts ---
+import { createClient } from "@/app/lib/supabase/server";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { redirect } from "next/navigation";
+
+export const CONTROL_PLANE_ACCESS_PERMISSION = "platform.control.read";
+
+async function getPermissionsForMembership(
+  membershipId: string,
+  organizationId: string
+): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data: assignments, error: assignmentsError } = await supabase
+    .from("membership_roles")
+    .select("role_id")
+    .eq("membership_id", membershipId);
+
+  if (assignmentsError) {
+    throw new Error(
+      `Failed to load membership roles: ${assignmentsError.message}`
+    );
+  }
+
+  if (!assignments || assignments.length === 0) {
+    return new Set<string>();
+  }
+
+  const roleIds = assignments.map((assignment) => assignment.role_id);
+
+  const { data: roles, error: rolesError } = await supabase
+    .from("roles")
+    .select("id, organization_id, scope, status")
+    .in("id", roleIds)
+    .eq("organization_id", organizationId)
+    .eq("scope", "organization")
+    .eq("status", "active");
+
+  if (rolesError) {
+    throw new Error(
+      `Failed to load organization roles: ${rolesError.message}`
+    );
+  }
+
+  if (!roles || roles.length === 0) {
+    return new Set<string>();
+  }
+
+  const validRoleIds = roles.map((role) => role.id);
+
+  const { data: rolePermissions, error: rolePermissionsError } =
+    await supabase
+      .from("role_permissions")
+      .select("permission_id")
+      .in("role_id", validRoleIds);
+
+  if (rolePermissionsError) {
+    throw new Error(
+      `Failed to load role permissions: ${rolePermissionsError.message}`
+    );
+  }
+
+  if (!rolePermissions || rolePermissions.length === 0) {
+    return new Set<string>();
+  }
+
+  const permissionIds = rolePermissions.map(
+    (rolePermission) => rolePermission.permission_id
+  );
+
+  const { data: permissions, error: permissionsError } = await supabase
+    .from("permissions")
+    .select("id, code")
+    .in("id", permissionIds);
+
+  if (permissionsError) {
+    throw new Error(
+      `Failed to load permissions: ${permissionsError.message}`
+    );
+  }
+
+  const permissionSet = new Set<string>();
+
+  for (const permission of permissions ?? []) {
+    permissionSet.add(permission.code);
+  }
+
+  return permissionSet;
+}
+
+export async function getCurrentPermissions(): Promise<Set<string>> {
+  const { membership, organization } = await getOrganizationContext();
+
+  if (membership.status !== "active") {
+    throw new Error("Forbidden: inactive organization membership.");
+  }
+
+  if (organization.status !== "active") {
+    throw new Error("Forbidden: inactive organization.");
+  }
+
+  return getPermissionsForMembership(membership.id, organization.id);
+}
+
+export async function getPermissionsForOrganization(
+  organizationId: string
+): Promise<Set<string>> {
+  const { profile } = await getOrganizationContext();
+  const supabase = await createClient();
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("organization_memberships")
+    .select(
+      `
+        id,
+        organizations!inner (
+          status
+        )
+      `
+    )
+    .eq("user_profile_id", profile.id)
+    .eq("organization_id", organizationId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (membershipError) {
+    throw new Error(
+      `Failed to resolve organization authorization: ${membershipError.message}`
+    );
+  }
+
+  const organization = Array.isArray(membership?.organizations)
+    ? membership.organizations[0]
+    : membership?.organizations;
+
+  if (!membership || organization?.status !== "active") {
+    return new Set<string>();
+  }
+
+  return getPermissionsForMembership(membership.id, organizationId);
+}
+
+export async function hasPermission(
+  permissionCode: string
+): Promise<boolean> {
+  const permissions = await getCurrentPermissions();
+
+  return permissions.has(permissionCode);
+}
+
+export async function requirePermission(
+  permissionCode: string
+): Promise<void> {
+  const allowed = await hasPermission(permissionCode);
+
+  if (!allowed) {
+    throw new Error(`Forbidden: missing permission ${permissionCode}`);
+  }
+}
+
+export async function getPlatformControlPlaneAccess(): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc(
+    "get_current_platform_control_access",
+  );
+
+  return !error && data === true;
+}
+export async function hasControlPlaneAccess(): Promise<boolean> {
+  return getPlatformControlPlaneAccess();
+}
+
+export async function requireControlPlaneAccess(): Promise<void> {
+  if (!(await hasControlPlaneAccess())) {
+    redirect("/applications");
+  }
+}
+export async function hasActiveProductDeployment(
+  productCode: string
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { organizationId } = await getOrganizationContext();
+
+  const { data: deployment, error } = await supabase
+    .from("organization_products")
+    .select(
+      `
+        id,
+        product_definitions!inner (
+          code,
+          status
+        )
+      `
+    )
+    .eq("organization_id", organizationId)
+    .eq("status", "active")
+    .eq("product_definitions.code", productCode)
+    .eq("product_definitions.status", "active")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Failed to verify active ${productCode} deployment: ${error.message}`
+    );
+  }
+
+  return Boolean(deployment);
+}
+
+--- .\app\lib\auth\organization-context.ts ---
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { createClient } from "@/app/lib/supabase/server";
+
+export const ACTIVE_ORGANIZATION_COOKIE = "sakata-active-organization";
+
+type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  organization_type: string;
+  status: string;
+};
+
+type OrganizationMembership = {
+  id: string;
+  organization_id: string;
+  user_profile_id: string;
+  status: string;
+  joined_at: string;
+  organizations: Organization | Organization[] | null;
+};
+
+function normalizeOrganization(
+  organizations: Organization | Organization[] | null,
+): Organization | null {
+  if (Array.isArray(organizations)) {
+    return organizations[0] ?? null;
+  }
+
+  return organizations;
+}
+
+async function getAuthenticatedProfile() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("user_profiles")
+    .select("id, auth_user_id, display_name, phone, status")
+    .eq("auth_user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (profileError) {
+    throw new Error(
+      `Failed to load authenticated user profile: ${profileError.message}`,
+    );
+  }
+
+  if (!profile) {
+    redirect("/onboarding");
+  }
+
+  return {
+    supabase,
+    user,
+    profile,
+  };
+}
+
+async function getActiveMemberships(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profileId: string,
+): Promise<OrganizationMembership[]> {
+  const { data: memberships, error: membershipError } = await supabase
+    .from("organization_memberships")
+    .select(`
+      id,
+      organization_id,
+      user_profile_id,
+      status,
+      joined_at,
+      organizations (
+        id,
+        name,
+        slug,
+        organization_type,
+        status
+      )
+    `)
+    .eq("user_profile_id", profileId)
+    .eq("status", "active")
+    .order("joined_at", { ascending: true });
+
+  if (membershipError) {
+    throw new Error(
+      `Failed to load organization memberships: ${membershipError.message}`,
+    );
+  }
+
+  return (memberships ?? []) as OrganizationMembership[];
+}
+
+export async function getAvailableOrganizations() {
+  const { supabase, user, profile } = await getAuthenticatedProfile();
+
+  const memberships = await getActiveMemberships(supabase, profile.id);
+
+  return {
+    user,
+    profile,
+    memberships: memberships
+      .map((membership) => ({
+        membership,
+        organization: normalizeOrganization(membership.organizations),
+      }))
+      .filter(
+        (
+          item,
+        ): item is {
+          membership: OrganizationMembership;
+          organization: Organization;
+        } =>
+          item.organization !== null && item.organization.status === "active",
+      ),
+  };
+}
+
+export async function getOrganizationContext() {
+  const { supabase, user, profile } = await getAuthenticatedProfile();
+
+  const memberships = await getActiveMemberships(supabase, profile.id);
+
+  if (memberships.length === 0) {
+    redirect("/onboarding");
+  }
+
+  /*
+   * A single active membership is unambiguous.
+   *
+   * Do not write a cookie here. Server Components cannot safely mutate
+   * response cookies during ordinary rendering.
+   */
+  if (memberships.length === 1) {
+    const membership = memberships[0];
+    const organization = normalizeOrganization(membership.organizations);
+
+    if (!organization || organization.status !== "active") {
+      redirect("/onboarding");
+    }
+
+    return {
+      user,
+      profile,
+      membership,
+      organization,
+      organizationId: membership.organization_id,
+    };
+  }
+
+  /*
+   * Multiple active organizations require an explicit active-organization
+   * selection. The cookie is only a selection hint; the membership above
+   * has already been loaded from the authenticated user's database records.
+   */
+  const cookieStore = await cookies();
+  const selectedOrganizationId = cookieStore.get(
+    ACTIVE_ORGANIZATION_COOKIE,
+  )?.value;
+
+  const membership = selectedOrganizationId
+    ? memberships.find(
+        (candidate) =>
+          candidate.organization_id === selectedOrganizationId,
+      )
+    : undefined;
+
+  if (!membership) {
+    redirect("/organizations/select");
+  }
+
+  const organization = normalizeOrganization(membership.organizations);
+
+  if (!organization || organization.status !== "active") {
+    redirect("/organizations/select");
+  }
+
+  return {
+    user,
+    profile,
+    membership,
+    organization,
+    organizationId: membership.organization_id,
+  };
+}
+
+
+
+--- .\app\lib\supabase\server.ts ---
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Server Components cannot always write cookies.
+          }
+        },
+      },
+    }
+  );
+}
+
+--- .\app\lib\supabase\proxy.ts ---
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function updateSession(request: NextRequest) {
+  const sanitizedUrl = request.nextUrl.clone();
+  let removedSensitiveQuery = false;
+
+  for (const parameter of Array.from(sanitizedUrl.searchParams.keys())) {
+    if (["password", "passwd", "pass"].includes(parameter.toLowerCase())) {
+      sanitizedUrl.searchParams.delete(parameter);
+      removedSensitiveQuery = true;
+    }
+  }
+
+  if (sanitizedUrl.pathname === "/login") {
+    for (const parameter of Array.from(sanitizedUrl.searchParams.keys())) {
+      if (["email", "username"].includes(parameter.toLowerCase())) {
+        sanitizedUrl.searchParams.delete(parameter);
+        removedSensitiveQuery = true;
+      }
+    }
+  }
+
+  if (removedSensitiveQuery) {
+    return NextResponse.redirect(sanitizedUrl);
+  }
+
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+
+            supabaseResponse.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const { data } = await supabase.auth.getClaims();
+
+  const claims = data?.claims;
+
+  const isAuthCallback =
+    request.nextUrl.pathname === "/auth/callback";
+
+  if (
+    !claims &&
+    !request.nextUrl.pathname.startsWith("/login") &&
+    !isAuthCallback
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
+}
+
+--- .\proxy.ts ---
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/app/lib/supabase/proxy";
+
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
+
+--- .\app\auth\callback\route.ts ---
+import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@/app/lib/supabase/server";
+
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
+
+  if (!code) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    return NextResponse.redirect(
+      new URL("/login?confirmation=failed", request.url)
+    );
+  }
+
+  const next = request.nextUrl.searchParams.get("next");
+  const destination =
+    next === "/auth/recover" ? next : "/auth/continue";
+
+  return NextResponse.redirect(new URL(destination, request.url));
+}
+
+--- .\app\login\page.tsx ---
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/app/lib/supabase/client";
+import PasswordField from "./password-field";
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "recovery">(
+    "sign-in",
+  );
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"error" | "status">("error");
+
+  function showMessage(value: string, type: "error" | "status" = "error") {
+    setMessage(value);
+    setMessageType(type);
+  }
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("confirmation") !== "failed") {
+      return;
+    }
+
+    window.history.replaceState(null, "", "/login");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    showMessage(
+      "Email confirmation could not be completed. Please try the confirmation link again or sign in."
+    );
+  }, []);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const supabase = createClient();
+
+      if (mode === "recovery") {
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          {
+            redirectTo: `${window.location.origin}/auth/callback?next=/auth/recover`,
+          },
+        );
+
+        if (error) {
+          showMessage(
+            "Password recovery could not be started. Please try again later.",
+          );
+          return;
+        }
+
+        showMessage(
+          "If an account can be recovered with that email, a password reset link will be sent.",
+          "status",
+        );
+        return;
+      }
+
+      if (mode === "sign-up") {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { display_name: displayName.trim() },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+
+        setPassword("");
+
+        if (error) {
+          showMessage(
+            "Account creation could not be completed. Check your details and try again.",
+          );
+          return;
+        }
+
+        if (data.session) {
+          router.replace("/auth/continue");
+          router.refresh();
+          return;
+        }
+
+        showMessage(
+          "Account created. Check your email to confirm your address, then sign in to continue.",
+          "status",
+        );
+        setMode("sign-in");
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      setPassword("");
+
+      if (error) {
+        showMessage(
+          "Email or password was not recognized. If you are new to SAKATA OS, create an account.",
+        );
+        return;
+      }
+
+      router.replace("/auth/continue");
+      router.refresh();
+    } catch {
+      setPassword("");
+      showMessage(
+        mode === "recovery"
+          ? "Password recovery could not be started. Please try again later."
+          : mode === "sign-up"
+            ? "Account creation could not be completed. Check your details and try again."
+            : "Sign in could not be completed. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-10 sm:px-6 sm:py-16">
+        <div className="w-full max-w-md">
+          <div className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              SAKATA TECHNOLOGIES
+            </p>
+            <p className="mt-2 text-sm font-medium tracking-[0.2em] text-sky-300">
+              SAKATA OPERATING SYSTEMS
+            </p>
+
+            <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
+              {mode === "recovery"
+                ? "Reset your password"
+                : mode === "sign-up"
+                  ? "Create your account"
+                  : "Sign in"}
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              {mode === "recovery"
+                ? "Enter your account email to receive a password reset link."
+                : "Access the applications and organization services available to you."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+            <form method="post" onSubmit={handleSubmit} className="space-y-5">
+              {mode === "sign-up" && (
+                <div>
+                  <label
+                    htmlFor="display-name"
+                    className="mb-2 block text-sm font-medium text-slate-200"
+                  >
+                    Name
+                  </label>
+                  <input
+                    id="display-name"
+                    name="display-name"
+                    type="text"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    autoComplete="name"
+                    required
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-400/40"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium text-slate-200"
+                >
+                  Email
+                </label>
+
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-400/40"
+                />
+              </div>
+
+              {mode !== "recovery" && (
+                <PasswordField
+                  id="password"
+                  name="password"
+                  label="Password"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder={
+                    mode === "sign-up" ? "Create a password" : "Your password"
+                  }
+                  autoComplete={
+                    mode === "sign-up" ? "new-password" : "current-password"
+                  }
+                  minLength={mode === "sign-up" ? 8 : undefined}
+                />
+              )}
+
+
+--- .\app\school\layout.tsx ---
+import type { ReactNode } from "react";
+import Link from "next/link";
+import {
+  getCurrentPermissions,
+  hasActiveProductDeployment,
+} from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { redirect } from "next/navigation";
+
+export default async function SchoolLayout({
+  children,
+}: LayoutProps<"/school">) {
+  if (!(await hasActiveProductDeployment("school_os"))) {
+    redirect("/applications");
+  }
+
+  const { organization } = await getOrganizationContext();
+  const permissions = await getCurrentPermissions();
+  const canReadAdmissions = permissions.has("school.admission_requests.read");
+  const canReadAcademicPeriods = permissions.has(
+    "school.academic_periods.read",
+  );
+  const canReadAcademicStructure = permissions.has(
+    "school.education_levels.read",
+  );
+  const canReadClasses = permissions.has("school.classes.read");
+  const canReadStudents = permissions.has("school.students.read");
+  const canReadEnrollments = permissions.has("school.enrollments.read");
+  const canReadAttendance = permissions.has("school.attendance.read");
+  const canReadDocuments = permissions.has("core.documents.read");
+  const canReadTasks = permissions.has("core.tasks.read");
+  const canReadFinance = permissions.has("school.fees.read");
+  const canReadStaff = permissions.has("memberships.read");
+  const canReadSchoolHome = [
+    "school.academic_periods.read",
+    "school.education_levels.read",
+    "school.classes.read",
+    "school.admission_requests.read",
+    "school.students.read",
+    "school.enrollments.read",
+    "school.attendance.read",
+    "school.fees.read",
+    "core.tasks.read",
+    "core.documents.read",
+    "memberships.read",
+  ].some((permission) => permissions.has(permission));
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="border-b border-slate-800 bg-slate-950">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              SAKATA OPERATING SYSTEMS
+            </p>
+
+            {canReadSchoolHome ? (
+              <Link
+                href="/school"
+                className="mt-1 block text-lg font-semibold text-sky-200"
+              >
+                School OS
+              </Link>
+            ) : (
+              <p className="mt-1 text-lg font-semibold text-sky-200">
+                School OS
+              </p>
+            )}
+          </div>
+
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wider text-slate-500">
+              Organization
+            </p>
+
+            <p className="mt-1 text-sm font-medium text-slate-200">
+              {organization.name}
+            </p>
+          </div>
+        </div>
+
+        <nav className="border-t border-slate-900">
+          <div className="mx-auto flex max-w-7xl flex-wrap gap-x-6 gap-y-2 px-6 py-3 text-sm">
+            {canReadSchoolHome && (
+              <Link
+                href="/school"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Overview
+              </Link>
+            )}
+
+            {canReadAcademicPeriods && (
+              <Link
+                href="/school/academic-periods"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Academic Periods
+              </Link>
+            )}
+
+            {canReadAcademicStructure && (
+              <Link
+                href="/school/academic-structure"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Academic Structure
+              </Link>
+            )}
+
+            {canReadClasses && (
+              <Link
+                href="/school/classes"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Classes
+              </Link>
+            )}
+
+            {canReadAdmissions && (
+              <Link
+                href="/school/admissions"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Admissions
+              </Link>
+            )}
+
+            {canReadStudents && (
+              <Link
+                href="/school/students"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Students
+              </Link>
+            )}
+
+            {canReadEnrollments && (
+              <Link
+                href="/school/enrollments"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Enrollments
+              </Link>
+            )}
+
+            {canReadAttendance && (
+              <Link
+                href="/school/attendance"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Attendance
+              </Link>
+            )}
+
+            {canReadTasks && (
+              <Link
+                href="/school/tasks"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Tasks
+              </Link>
+            )}
+
+            {canReadFinance && (
+              <Link
+                href="/school/finance"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Finance
+              </Link>
+            )}
+
+            {canReadDocuments && (
+              <Link
+                href="/documents"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Documents
+              </Link>
+            )}
+
+            {canReadStaff && (
+              <Link
+                href="/school/staff"
+                className="text-slate-400 transition hover:text-white"
+              >
+                Staff & Roles
+              </Link>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      <main>{children}</main>
+    </div>
+  );
+}
+
+
+--- .\app\school\page.tsx ---
+import Link from "next/link";
+import SchoolCommandCenter from "./command-center";
+import { getCurrentPermissions } from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+
+export default async function SchoolHome() {
+  const permissions = await getCurrentPermissions();
+  const canReadSchoolHome = [
+    "school.academic_periods.read",
+    "school.education_levels.read",
+    "school.classes.read",
+    "school.admission_requests.read",
+    "school.students.read",
+    "school.enrollments.read",
+    "school.attendance.read",
+    "school.fees.read",
+    "core.tasks.read",
+    "core.documents.read",
+    "memberships.read",
+  ].some((permission) => permissions.has(permission));
+  if (!canReadSchoolHome) {
+    throw new Error(
+      "Forbidden: missing School OS read permission",
+    );
+  }
+
+  const { organization } = await getOrganizationContext();
+
+  const canReadAcademicPeriods = permissions.has(
+    "school.academic_periods.read",
+  );
+  const canReadAcademicStructure = permissions.has(
+    "school.education_levels.read",
+  );
+  const canReadClasses = permissions.has("school.classes.read");
+  const canReadAdmissions = permissions.has(
+    "school.admission_requests.read",
+  );
+  const canReadStudents = permissions.has("school.students.read");
+  const canReadEnrollments = permissions.has("school.enrollments.read");
+  const canReadAttendance = permissions.has("school.attendance.read");
+  const canReadFinance = permissions.has("school.fees.read");
+
+  return (
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+      <div className="mx-auto max-w-7xl">
+        <SchoolCommandCenter />
+        <header className="mb-10">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                SAKATA OPERATING SYSTEMS
+              </p>
+
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+                School OS
+              </h1>
+
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
+                The school operating environment for coordinating academic,
+                administrative, financial, people, and operational processes
+                through one controlled system.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Organization
+              </p>
+
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {organization.name}
+              </p>
+
+              <p className="mt-1 text-sm text-emerald-400">
+                School OS Active
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <section className="mb-10 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-sm text-slate-400">Operating Foundation</p>
+
+            <p className="mt-2 text-2xl font-bold">Academic Operations</p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              The School OS foundation connects academic periods, normalized
+              structure, classes, students, admission requests, enrollment
+              history, and attendance.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-sm text-slate-400">Permission-scoped access</p>
+
+            <p className="mt-2 text-2xl font-bold">Organization roles</p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Modules below are available only when your organization role
+              grants access. Each route and operation checks permissions on
+              the server.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-sm text-slate-400">Current Operating Chain</p>
+
+            <p className="mt-2 text-2xl font-bold">Student Lifecycle</p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Admission requests can enter a controlled workflow before
+              becoming canonical student records, followed by enrollment,
+              class placement, and attendance.
+            </p>
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">
+              Academic Operations
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold">
+              Operating Foundation
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              Establish the academic structure first, then connect admission
+              requests, students, enrollment history, and attendance to that
+              controlled foundation.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {canReadAcademicPeriods && (
+            <Link
+              href="/school/academic-periods"
+              className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
+                Academic Lifecycle
+              </p>
+
+              <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
+                Academic Periods
+              </h3>
+
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                Define academic years, terms, periods, dates, and lifecycle
+                status.
+              </p>
+
+              <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
+                Open module &gt;
+              </p>
+            </Link>
+            )}
+
+            {canReadAcademicStructure && (
+              <Link
+                href="/school/academic-structure"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
+                  Academic Structure
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
+                  Education &amp; Class Levels
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Define the education levels and class levels that form the
+                  school&apos;s academic hierarchy.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
+
+            {canReadClasses && (
+              <Link
+                href="/school/classes"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
+                  Academic Structure
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
+                  Classes
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Create and manage operational classes using the normalized
+                  education-level and class-level structure.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
+
+            {canReadAdmissions && (
+              <Link
+                href="/school/admissions"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-violet-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-400">
+                  Student Lifecycle
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-violet-200">
+                  Admissions
+
+--- .\tsconfig.json ---
+{
+    "compilerOptions":  {
+                            "target":  "ES2017",
+                            "lib":  [
+                                        "dom",
+                                        "dom.iterable",
+                                        "esnext"
+                                    ],
+                            "allowJs":  true,
+                            "skipLibCheck":  true,
+                            "strict":  true,
+                            "noEmit":  true,
+                            "esModuleInterop":  true,
+                            "module":  "esnext",
+                            "moduleResolution":  "bundler",
+                            "resolveJsonModule":  true,
+                            "isolatedModules":  true,
+                            "jsx":  "react-jsx",
+                            "incremental":  true,
+                            "plugins":  [
+                                            {
+                                                "name":  "next"
+                                            }
+                                        ],
+                            "paths":  {
+                                          "@/*":  [
+                                                      "./*"
+                                                  ]
+                                      },
+                            "baseUrl":  "."
+                        },
+    "include":  [
+                    "next-env.d.ts",
+                    "**/*.ts",
+                    "**/*.tsx",
+                    ".next/types/**/*.ts",
+                    "**/*.mts",
+                    ".next/dev/types/**/*.ts"
+                ],
+    "exclude":  [
+                    "node_modules",
+                    "backups"
+                ]
+}
+
+--- .\package.json ---
+{
+  "name": "sakata-os",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "next": "16.3.4",
+    "pdf-lib": "^1.17.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "supabase": "^2.119.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  }
+}
+
+===== 3. ALIAS CONFIGURATION =====
+{
+    "compilerOptions":  {
+                            "target":  "ES2017",
+                            "lib":  [
+                                        "dom",
+                                        "dom.iterable",
+                                        "esnext"
+                                    ],
+                            "allowJs":  true,
+                            "skipLibCheck":  true,
+                            "strict":  true,
+                            "noEmit":  true,
+                            "esModuleInterop":  true,
+                            "module":  "esnext",
+                            "moduleResolution":  "bundler",
+                            "resolveJsonModule":  true,
+                            "isolatedModules":  true,
+                            "jsx":  "react-jsx",
+                            "incremental":  true,
+                            "plugins":  [
+                                            {
+                                                "name":  "next"
+                                            }
+                                        ],
+                            "paths":  {
+                                          "@/*":  [
+                                                      "./*"
+                                                  ]
+                                      },
+                            "baseUrl":  "."
+                        },
+    "include":  [
+                    "next-env.d.ts",
+                    "**/*.ts",
+                    "**/*.tsx",
+                    ".next/types/**/*.ts",
+                    "**/*.mts",
+                    ".next/dev/types/**/*.ts"
+                ],
+    "exclude":  [
+                    "node_modules",
+                    "backups"
+                ]
+}
+
+===== AUTH IMPORT REFERENCES =====
+
+Path
+----
+C:\Users\IBRAHIM SAKATA\sakata-os\app\api\organization\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\api\organization\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\api\school\admissions\convert\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\api\school\admissions\convert\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\applications\organization-switcher.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\applications\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\applications\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\auth\continue\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\automation\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\automation\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\automation\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\automation\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\configuration\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\configuration\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\configuration\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\configuration\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\deployments\[organi...
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\deployments\[organi...
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\users\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\users\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\[organizationId]\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\organizations\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\tasks\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\tasks\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\tasks\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\tasks\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\admission-student\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\admission-student\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\automation\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\automation\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\automation\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\automation\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\modules\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\modules\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\notifications\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\verification\notifications\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\admission-setup\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\admission-setup\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\workflows\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\layout.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\control\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\documents\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\documents\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\documents\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\documents\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\lib\auth\authorization.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\lib\workflows\runtime.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\lib\workflows\runtime.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\organizations\select\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\organizations\select\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-periods\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-periods\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-periods\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-periods\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\class-level-actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\class-level-actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\education-level-actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\education-level-actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\academic-structure\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\convert\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\convert\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\admissions\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\attendance\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\attendance\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\attendance\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\attendance\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\classes\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\classes\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\classes\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\classes\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\enrollments\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\enrollments\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\enrollments\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\enrollments\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\accounts\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\accounts\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\bursar\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\bursar\actions.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\bursar\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\bursar\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\export\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\export\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\pdf\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\pdf\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\collections\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\payments\[id]\receipt\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\payments\[id]\receipt\route.ts
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\payments\page.tsx
+C:\Users\IBRAHIM SAKATA\sakata-os\app\school\finance\payments\page.tsx
+
+===== 4. FILE ENCODING / BOM =====
+.\app\lib\auth\authorization.ts : EF-BB-BF-69
+.\app\lib\auth\organization-context.ts : EF-BB-BF-69
+.\tsconfig.json : 7B-0D-0A-20
+
+===== 5. PACKAGE SCRIPTS =====
+
+
+===== 6. CURRENT LOCAL HTTP RESPONSE =====
+Status: 307
+
+===== 7. ENVIRONMENT VARIABLE NAMES ONLY =====
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY
+
+===== 8. BUILD OUTPUT TIMESTAMPS =====
+
+
+
+
+===== 9. RECENT BUILD DIAGNOSTICS =====
+
+--- .\build-diagnostic.log ---
+  [90m  |[0m                             [31m[1m^[0m
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { hasPermission, requirePermission
+} [36mfrom[0m [32m"@/app/lib/auth/authorization"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { getOrganizationContext } [36mfrom[0m
+[32m"@/app/lib/auth/organization-context"[0m;
+  [90m4 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+  [90m5 |[0m [36mimport[0m { createBursarFollowUpTask } [36mfrom[0m
+[32m"./actions"[0m;
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./app/school/finance/collections/export/route.ts:1:1
+Error: Module not found: Can't resolve '@/app/lib/auth/authorization'
+[31m[1m>[0m [90m1 |[0m [36mimport[0m { requirePermission }
+[36mfrom[0m [32m"@/app/lib/auth/authorization"[0m;
+  [90m  |[0m
+[31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m2 |[0m [36mimport[0m { getOrganizationContext } [36mfrom[0m
+[32m"@/app/lib/auth/organization-context"[0m;
+  [90m3 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+  [90m4 |[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./app/school/finance/collections/page.tsx:2:1
+Error: Module not found: Can't resolve '@/app/lib/auth/authorization'
+  [90m1 |[0m [36mimport[0m [33mLink[0m [36mfrom[0m
+[32m"next/link"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { requirePermission }
+[36mfrom[0m [32m"@/app/lib/auth/authorization"[0m;
+  [90m  |[0m
+[31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { getOrganizationContext } [36mfrom[0m
+[32m"@/app/lib/auth/organization-context"[0m;
+  [90m4 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+  [90m5 |[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./app/school/finance/collections/pdf/route.ts:2:1
+Error: Module not found: Can't resolve '@/app/lib/auth/authorization'
+  [90m1 |[0m [36mimport[0m { [33mPDFDocument[0m, [33mStandardFonts[0m,
+rgb } [36mfrom[0m [32m"pdf-lib"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { requirePermission }
+[36mfrom[0m [32m"@/app/lib/auth/authorization"[0m;
+  [90m  |[0m
+[31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { getOrganizationContext } [36mfrom[0m
+[32m"@/app/lib/auth/organization-context"[0m;
+  [90m4 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+  [90m5 |[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./app/school/finance/page.tsx:3:1
+Error: Module not found: Can't resolve '@/app/lib/auth/authorization'
+  [90m1 |[0m [36mimport[0m [33mLink[0m [36mfrom[0m
+[32m"next/link"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mimport[0m { requirePermission }
+[36mfrom[0m [32m"@/app/lib/auth/authorization"[0m;
+  [90m  |[0m
+[31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mimport[0m { getOrganizationContext } [36mfrom[0m
+[32m"@/app/lib/auth/organization-context"[0m;
+  [90m5 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+  [90m6 |[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./app/school/finance/payments-actions.ts:5:77
+Error: Module not found: Can't resolve '@/app/lib/auth/authorization'
+  [90m3 |[0m [36mimport[0m { revalidatePath } [36mfrom[0m
+[32m"next/cache"[0m;
+  [90m4 |[0m [36mimport[0m { createClient } [36mfrom[0m
+[32m"@/app/lib/supabase/server"[0m;
+[31m[1m>[0m [90m5 |[0m [36mimport[0m { getOrganizationContext }
+[36mfrom[0m [32m"@/app/lib/auth/organization-context"[0m;
+**********************
+Windows PowerShell transcript end
+End time: 20261024033630
+**********************

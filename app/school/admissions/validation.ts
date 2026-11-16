@@ -205,3 +205,65 @@ export const ADMISSION_OPERATOR_EXCEPTION_LABELS: Record<
   missing_requested_admission_date: "Missing requested date",
   no_active_workflow: "No active workflow",
 };
+export type AdmissionDecisionCode =
+  | "approve_admission"
+  | "reject_admission"
+  | "request_admission_changes";
+
+export type AdmissionDecisionValidationInput = {
+  decisionCode: string;
+  decisionReason: string;
+};
+
+export function validateAdmissionDecisionEvidence(
+  input: AdmissionDecisionValidationInput
+):
+  | {
+      valid: true;
+      decisionCode: AdmissionDecisionCode;
+      decisionReason: string;
+    }
+  | {
+      valid: false;
+      errors: string[];
+    } {
+  const errors: string[] = [];
+
+  const decisionCode = input.decisionCode.trim();
+  const decisionReason = input.decisionReason.trim();
+
+  const validDecisionCodes: AdmissionDecisionCode[] = [
+    "approve_admission",
+    "reject_admission",
+    "request_admission_changes",
+  ];
+
+  if (
+    !validDecisionCodes.includes(
+      decisionCode as AdmissionDecisionCode
+    )
+  ) {
+    errors.push("Invalid admission decision.");
+  }
+
+  if (!decisionReason) {
+    errors.push("A decision reason or decision note is required.");
+  } else if (decisionReason.length > 1000) {
+    errors.push(
+      "The decision reason or note must be 1000 characters or fewer."
+    );
+  }
+
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      errors,
+    };
+  }
+
+  return {
+    valid: true,
+    decisionCode: decisionCode as AdmissionDecisionCode,
+    decisionReason,
+  };
+}

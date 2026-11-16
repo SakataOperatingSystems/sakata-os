@@ -1,10 +1,13 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { requirePermission } from "@/app/lib/auth/authorization";
-import { validateTaskInput } from "./validation";
+import {
+  isValidTaskStateTransition,
+  validateTaskInput,
+} from "./validation";
 
 export type TaskActionState = {
   success: boolean;
@@ -58,6 +61,71 @@ function getErrorMessage(
   return `Failed to ${operation} task.`;
 }
 
+async function validateTaskAssignee(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  assignedToUserId: string | null
+): Promise<void> {
+  if (!assignedToUserId) {
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("organization_memberships")
+    .select(
+      "user_profile_id, status, user_profiles!inner(id, status)"
+    )
+    .eq("organization_id", organizationId)
+    .eq("user_profile_id", assignedToUserId)
+    .eq("status", "active")
+    .eq("user_profiles.status", "active")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Failed to validate task assignee: ${error.message}`
+    );
+  }
+
+  if (!data) {
+    throw new Error(
+      "The selected assignee is not an active member of this organization."
+    );
+  }
+}
+async function validateTaskStateTransition(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  taskId: string,
+  requestedStatus: string
+): Promise<void> {
+  const { data: currentTask, error } = await supabase
+    .from("tasks")
+    .select("status")
+    .eq("id", taskId)
+    .eq("organization_id", organizationId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      throw new Error(
+        "Task not found or you do not have access to it."
+      );
+    }
+
+    throw new Error(
+      `Failed to load current task state: ${error.message}`
+    );
+  }
+
+  const currentStatus = currentTask.status as string;
+
+  if (!isValidTaskStateTransition(currentStatus as never, requestedStatus as never)) {
+    throw new Error(
+      `Invalid task state transition: ${currentStatus} ? ${requestedStatus}.`
+    );
+  }
+}
 export async function createTask(
   _previousState: TaskActionState,
   formData: FormData
@@ -77,6 +145,12 @@ export async function createTask(
       dueAt,
     } = validateTaskInput(formData);
 
+    await validateTaskAssignee(
+      supabase,
+      organizationId,
+      assignedToUserId
+    );
+
     const { error } = await supabase.from("tasks").insert({
       organization_id: organizationId,
       title,
@@ -95,6 +169,8 @@ export async function createTask(
     }
 
     revalidatePath("/control/tasks");
+    revalidatePath("/school/tasks");
+    revalidatePath("/school");
 
     return {
       success: true,
@@ -143,6 +219,19 @@ export async function updateTask(
       dueAt,
     } = validateTaskInput(formData);
 
+    await validateTaskAssignee(
+      supabase,
+      organizationId,
+      assignedToUserId
+    );
+
+    await validateTaskStateTransition(
+      supabase,
+      organizationId,
+      id,
+      status
+    );
+
     const { data, error } = await supabase
       .from("tasks")
       .update({
@@ -181,6 +270,8 @@ export async function updateTask(
     }
 
     revalidatePath("/control/tasks");
+    revalidatePath("/school/tasks");
+    revalidatePath("/school");
 
     return {
       success: true,

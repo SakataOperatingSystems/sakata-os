@@ -1,4 +1,9 @@
-﻿"use client";
+"use client";
+
+import {
+  TASK_STATE_TRANSITIONS,
+  type TaskStatus,
+} from "./validation";
 
 import { useActionState } from "react";
 import { createTask, updateTask } from "./actions";
@@ -9,11 +14,18 @@ type TaskFormTask = {
   description: string | null;
   status: "open" | "in_progress" | "completed" | "cancelled";
   priority: "low" | "normal" | "high" | "urgent";
+  assigned_to_user_id: string | null;
   due_at: string | null;
+};
+
+type TaskMember = {
+  user_profile_id: string;
+  display_name: string;
 };
 
 type TaskFormProps = {
   task?: TaskFormTask;
+  members: TaskMember[];
 };
 
 const initialState = {
@@ -41,7 +53,13 @@ function toDateTimeLocal(value: string | null): string {
   ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export default function TaskForm({ task }: TaskFormProps) {
+export default function TaskForm({
+  task,
+  members,
+}: TaskFormProps) {
+  const availableStatuses: readonly TaskStatus[] = task
+    ? TASK_STATE_TRANSITIONS[task.status as TaskStatus]
+    : ["open"];
   const isEditing = Boolean(task);
 
   const [state, formAction, pending] = useActionState(
@@ -81,7 +99,10 @@ export default function TaskForm({ task }: TaskFormProps) {
       </div>
 
       {state.error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+        <div
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3"
+        >
           <p className="text-sm font-medium text-red-300">
             {state.error}
           </p>
@@ -89,7 +110,10 @@ export default function TaskForm({ task }: TaskFormProps) {
       )}
 
       {state.success && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+        >
           <p className="text-sm font-medium text-emerald-300">
             Task saved successfully.
           </p>
@@ -118,7 +142,11 @@ export default function TaskForm({ task }: TaskFormProps) {
 
       <div>
         <label
-          htmlFor={isEditing ? `task-description-${task?.id}` : "task-description"}
+          htmlFor={
+            isEditing
+              ? `task-description-${task?.id}`
+              : "task-description"
+          }
           className="block text-sm font-medium text-slate-300"
         >
           Description
@@ -154,11 +182,18 @@ export default function TaskForm({ task }: TaskFormProps) {
             defaultValue={task?.status ?? "open"}
             className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
           >
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+          {availableStatuses.map((status) => (
+            <option key={status} value={status}>
+              {status === "open"
+                ? "Open"
+                : status === "in_progress"
+                  ? "In Progress"
+                  : status === "completed"
+                    ? "Completed"
+                    : "Cancelled"}
+            </option>
+          ))}
+        </select>
         </div>
 
         <div>
@@ -189,6 +224,45 @@ export default function TaskForm({ task }: TaskFormProps) {
             <option value="urgent">Urgent</option>
           </select>
         </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor={
+            isEditing
+              ? `task-assignee-${task?.id}`
+              : "task-assignee"
+          }
+          className="block text-sm font-medium text-slate-300"
+        >
+          Assignee
+        </label>
+
+        <select
+          id={
+            isEditing
+              ? `task-assignee-${task?.id}`
+              : "task-assignee"
+          }
+          name="assigned_to_user_id"
+          defaultValue={task?.assigned_to_user_id ?? ""}
+          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
+        >
+          <option value="">Unassigned</option>
+
+          {members.map((member) => (
+            <option
+              key={member.user_profile_id}
+              value={member.user_profile_id}
+            >
+              {member.display_name}
+            </option>
+          ))}
+        </select>
+
+        <p className="mt-2 text-xs text-slate-500">
+          Assignment is limited to active members of this organization.
+        </p>
       </div>
 
       <div>

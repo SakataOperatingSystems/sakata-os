@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +21,164 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * Compatibility layer for existing slate-based pages.
+ * It lets the global theme work before every page is migrated
+ * to semantic design tokens.
+ */
+:root[data-theme="light"] .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+:root[data-theme="light"] .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+:root[data-theme="light"] .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+:root[data-theme="light"] .bg-slate-700 {
+  background-color: #e2e8f0 !important;
+}
+:root[data-theme="light"] [class~="bg-slate-950/50"] {
+  background-color: #f8fafc !important;
+}
+:root[data-theme="light"] .text-white,
+:root[data-theme="light"] .text-slate-100,
+:root[data-theme="light"] .text-slate-200 {
+  color: #0f172a !important;
+}
+:root[data-theme="light"] .text-slate-300 {
+  color: #334155 !important;
+}
+:root[data-theme="light"] .text-slate-400 {
+  color: #475569 !important;
+}
+:root[data-theme="light"] .text-slate-500 {
+  color: #64748b !important;
+}
+:root[data-theme="light"] .text-slate-600 {
+  color: #64748b !important;
+}
+:root[data-theme="light"] .text-sky-200,
+:root[data-theme="light"] .text-sky-300 {
+  color: #0369a1 !important;
+}
+:root[data-theme="light"] .text-emerald-200,
+:root[data-theme="light"] .text-emerald-300,
+:root[data-theme="light"] .text-emerald-400 {
+  color: #047857 !important;
+}
+:root[data-theme="light"] .text-red-200,
+:root[data-theme="light"] .text-red-300 {
+  color: #b91c1c !important;
+}
+:root[data-theme="light"] .text-amber-200,
+:root[data-theme="light"] .text-amber-300,
+:root[data-theme="light"] .text-amber-400 {
+  color: #92400e !important;
+}
+:root[data-theme="light"] .text-cyan-300 {
+  color: #0e7490 !important;
+}
+:root[data-theme="light"] .text-violet-300 {
+  color: #6d28d9 !important;
+}
+:root[data-theme="light"] .border-slate-800,
+:root[data-theme="light"] .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .border-slate-600 {
+  border-color: #cbd5e1 !important;
+}
+:root[data-theme="light"] .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .hover\:bg-slate-700:hover {
+  background-color: #cbd5e1 !important;
+}
+:root[data-theme="light"] .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+:root[data-theme="light"] .catalogue-page .bg-slate-950 {
+  background-color: #0f172a !important;
+}
+:root[data-theme="light"] .catalogue-page .text-white {
+  color: #ffffff !important;
+}
+:root[data-theme="light"] .catalogue-hero .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .catalogue-page {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+:root[data-theme="dark"] .catalogue-page header {
+  border-color: #334155;
+  background-color: rgb(15 23 42 / 92%);
+}
+:root[data-theme="dark"] .catalogue-page .bg-white {
+  background-color: #111827;
+}
+:root[data-theme="dark"] .catalogue-page .bg-slate-50,
+:root[data-theme="dark"] .catalogue-page .bg-slate-50\/70 {
+  background-color: #1e293b;
+}
+:root[data-theme="dark"] .catalogue-page .bg-slate-100,
+:root[data-theme="dark"] .catalogue-page .bg-slate-200 {
+  background-color: #334155;
+}
+:root[data-theme="dark"] .catalogue-page .bg-slate-950 {
+  background-color: #020617;
+}
+:root[data-theme="dark"] .catalogue-page .bg-violet-50 {
+  background-color: #312e81;
+}
+:root[data-theme="dark"] .catalogue-page .bg-emerald-50 {
+  background-color: #064e3b;
+}
+:root[data-theme="dark"] .catalogue-page .bg-amber-50 {
+  background-color: #78350f;
+}
+:root[data-theme="dark"] .catalogue-page .text-slate-950,
+:root[data-theme="dark"] .catalogue-page .text-slate-900,
+:root[data-theme="dark"] .catalogue-page .text-slate-800,
+:root[data-theme="dark"] .catalogue-page .text-slate-700 {
+  color: #e2e8f0;
+}
+:root[data-theme="dark"] .catalogue-page .text-slate-600,
+:root[data-theme="dark"] .catalogue-page .text-slate-500 {
+  color: #cbd5e1;
+}
+:root[data-theme="dark"] .catalogue-page .text-slate-400 {
+  color: #94a3b8;
+}
+:root[data-theme="dark"] .catalogue-page .text-slate-300 {
+  color: #cbd5e1;
+}
+:root[data-theme="dark"] .catalogue-page .border-slate-100,
+:root[data-theme="dark"] .catalogue-page .border-slate-200,
+:root[data-theme="dark"] .catalogue-page .border-slate-300 {
+  border-color: #334155;
+}
+:root[data-theme="dark"] .catalogue-page [class~="hover:bg-slate-100"]:hover,
+:root[data-theme="dark"] .catalogue-page [class~="hover:bg-slate-50"]:hover {
+  background-color: #334155;
+}
+:root[data-theme="dark"] .catalogue-page input {
+  border-color: #475569;
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+:root[data-theme="dark"] .catalogue-page input::placeholder {
+  color: #94a3b8;
+}
+:root[data-theme="dark"] .catalogue-page .text-amber-950 {
+  color: #fef3c7;
 }

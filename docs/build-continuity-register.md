@@ -5,7 +5,7 @@
 **Repository:** sakata-os  
 **Branch:** main  
 **Register status:** ACTIVE  
-**Last verified:** 2026-09-18
+**Last verified:** 2026-10-17
 
 ---
 
@@ -51,11 +51,11 @@ This register is the current implementation-state record and must be updated as 
 
 ## 3. PLATFORM IDENTITY
 
-**Canonical name:** SAKATA OS
+**Company:** SAKATA TECHNOLOGIES
 
-**Business / technology identity:** Sakata Operating Systems
+**Software platform:** SAKATA OPERATING SYSTEMS (SAKATA OS)
 
-**Product category:** AI-powered private operations operating system and configurable operational control plane
+**Product category:** Multi-tenant operating systems platform and configurable operational control plane
 
 SAKATA OS is a configurable operating platform from which specialized operating environments can be instantiated.
 
@@ -184,7 +184,15 @@ Do not collapse these concerns merely to simplify the current School OS implemen
 
 ## 7. CURRENT PRODUCT CATALOGUE
 
-The current database catalogue contains **14 product definitions**.
+The current database catalogue contains **14 product definitions**. This registry
+is not the complete commercial portfolio and does not establish approval,
+implementation, readiness, demand, or customer assignment.
+
+Fleet & Mobility OS and Short-Stay Rental Operations OS are explicit proposed
+portfolio candidates, tracked separately from product definitions and
+organization assignments. Opportunity prioritization remains unranked until
+demand, problem severity/frequency, willingness to pay, effort, platform reuse,
+and risk evidence are gathered.
 
 Current products:
 
@@ -220,9 +228,13 @@ Whether supermarket operations eventually become:
 
 requires an explicit architecture/product decision.
 
-Do not create duplicate products merely to make the catalogue appear more complete.
+Do not create duplicate products merely to make the registry appear more complete.
 
-The same principle applies to future domains such as fleet, logistics, procurement, etc.
+Fleet & Mobility OS and Short-Stay Rental Operations OS are tracked as proposed
+portfolio candidates outside the current database product definitions. Their
+presence as candidates does not approve, implement, or validate either product.
+Assess future domains in the portfolio before changing product definitions or
+organization assignments.
 
 ---
 
@@ -516,6 +528,43 @@ Current Task Engine migrations:
 
 `20260918023000_harden_task_tenant_immutability.sql`
 
+### Shared Document Register — metadata-only foundation
+
+Status: SOURCE-IMPLEMENTED / UNIT-TESTED / DATABASE-UNVERIFIED / NOT SAFE FOR TENANT RELEASE
+
+Route: `/documents`
+
+The route is tenant-facing and is outside the platform-admin-only `/control`
+layout. School OS navigation exposes it only when the current organization role
+has `core.documents.read`.
+
+The register supports organization-scoped metadata create/read/detail and
+archive operations. The tenant and creator are derived from authenticated
+server context; read and archive queries are organization-filtered. Database
+RLS, role permissions, immutable tenant/creator/identity fields, and audit
+triggers are defined in the pending migration.
+
+This capability does not upload, store, or expose document files. No private
+storage provider or tenant-scoped object-access path was found, so no upload
+control, file path, or public URL is represented. Workflow linkage was not
+added because the current workflow schema has no document relation and no
+specific workflow use case requires one.
+
+No migration was applied during the current task, and the status of any database
+is **UNKNOWN**. Focused action tests cover server-derived tenant ownership and
+organization-filtered archive operations; they are not live RLS tests.
+Authorized page rendering remains unverified until the migration is applied to
+a confirmed non-production database. Do not treat this register as safe for
+tenant use until database/RLS checks pass.
+
+### Portfolio opportunity persistence decision
+
+Fleet & Mobility OS and Short-Stay Rental Operations OS remain proposed,
+unranked, code-governed hypotheses outside the registered product definitions.
+No platform portfolio-management permission or evidence-review workflow exists.
+Do not add an editable opportunity database or a second writable source of
+truth until those governance decisions are defined.
+
 ---
 
 ## 12. PROTECTED GIT MILESTONES
@@ -534,7 +583,9 @@ Current uncommitted milestone:
 
 **Core Platform Task Engine**
 
-The Task Engine implementation is live-tested and ready to be protected in Git after the continuity register update and final worktree inspection.
+The Task Engine implementation is live-tested. This task does not commit or
+stage changes; preserve the existing worktree and wait for explicit approval
+before creating any commit.
 
 Current HEAD before Task Engine protection:
 
@@ -572,9 +623,33 @@ Task Engine migrations deployed successfully:
 
 `20260918023000_harden_task_tenant_immutability.sql`
 
-Local and remote migration state was verified through:
+The last recorded local/remote migration verification in the previous build
+record was through `20260918023000`; this does not establish the current local
+or remote state. Current database migration state is **UNKNOWN**.
 
-`20260918023000`
+Migration file present; database application status **UNKNOWN**:
+
+`20261016010000_create_organization_documents.sql`
+
+The document migration defines the tenant-scoped metadata table, document
+permissions and administrator assignments, RLS, ownership hardening, and audit
+triggers. Source review found these dependencies in earlier migrations:
+`organizations`, `user_profiles`, `organization_memberships`, `permissions`,
+`roles`, `role_permissions`, `is_current_user_org_member`,
+`current_user_has_permission`, and `audit_events`.
+
+No local database is available: the Docker daemon is unavailable, local
+Supabase DB port 54322 is not listening, and `psql` is absent. The bundled
+Supabase CLI is v2.119.0; status parsing fails on the UTF-8 BOM at the start of
+the existing `.env.local`. The file was not read aloud or edited. No remote
+migration was attempted because the available project target has not been
+verified as non-production or authorized for changes. Migration status is
+therefore **unverified**; no migration was applied during this task.
+
+The required live RLS tests (authorized read; manager create/archive;
+permission denial; cross-organization read/update denial; spoofed tenant ID;
+ownership and creator immutability) have not run. Mock tests are not RLS
+evidence.
 
 Attendance database foundation includes:
 
@@ -636,6 +711,11 @@ Task permissions:
 Task permissions are currently assigned to:
 
 `organization_admin`
+
+Document read/manage permissions are defined in the pending migration and
+assigned to active `organization_admin` and `school_administrator` roles.
+Cross-organization RLS behavior remains **UNKNOWN** until tested against a
+configured non-production database.
 
 Current authorization is organization-level.
 
@@ -707,7 +787,11 @@ Still required:
 - workflow/state engine
 - approvals/decisions
 - events/jobs/notifications
-- documents
+- apply the document metadata migration to a non-production database
+- real cross-organization and insufficient-permission RLS tests
+- authorized desktop/mobile document-register browser verification
+- configure private file storage and tenant-bound object access before adding
+  upload or download behavior
 - broader audit surfaces and audit UI
 - commercial entitlements
 - provider abstractions
@@ -899,11 +983,12 @@ unless an explicit future instruction authorizes it.
 
 Current position:
 
-**School OS core lifecycle foundation is operational through Attendance, with enrollment and attendance audit events live-verified, and the first reusable Core Platform Task Engine implemented and live-verified.**
+**School OS core lifecycle foundation is operational through Attendance, with enrollment and attendance audit events live-verified, and the first reusable Core Platform Task Engine implemented and live-verified. A tenant-facing, metadata-only Document Register is implemented in source; its database migration is pending.**
 
 The system is NOT yet School OS V1 complete.
 
-The current priority is to continue from the protected implementation state rather than restart.
+The current priority is to apply and verify the document schema safely before
+calling the register usable in a tenant environment.
 
 ---
 
@@ -917,31 +1002,21 @@ The next build sequence must be decided from the actual repository/database stat
 
 Priority direction:
 
-1. protect the Task Engine milestone in Git
-2. inspect the remaining reusable operational architecture
-3. identify the next smallest reusable engine
-4. implement one coherent engine slice
-5. integrate it into School OS
-6. live-test it
-7. protect it in Git
-8. update this register
-9. repeat
+1. establish a safe target: start the local Supabase stack with a working Docker daemon, or identify and authorize a non-production database
+2. resolve the Supabase CLI environment-file parsing issue without disclosing or rewriting secrets
+3. apply the document migration to that non-production database
+4. test RLS denial across two organizations and with insufficient permissions
+5. complete authenticated desktop/mobile browser verification
+6. choose/configure private storage before any binary-file handling
 
 ---
 
 ## 24. EXACT CURRENT NEXT ACTION
 
-**Next action:** protect the verified Core Platform Task Engine milestone in Git.
-
-Before committing:
-
-- verify the continuity-register diff
-- verify intended Task Engine files
-- verify `product-data.sql` remains untouched and unstaged
-
-Then create one protected milestone commit for the Task Engine.
-
-Do not begin another engine or domain capability until this milestone is protected.
+**Next action:** apply `20261016010000_create_organization_documents.sql` to a
+configured non-production database, then run cross-organization RLS tests.
+Do not apply it remotely or alter the local environment file as part of this
+source-only implementation.
 
 ---
 
@@ -998,6 +1073,18 @@ Last verified Task audit behavior:
 **Task Update -> Audit Event**
 
 **Task Completion -> Audit Event**
+
+Document register source checks for the final tenant-facing route:
+
+- 9 focused tests;
+- 157 full-suite tests across 21 files;
+- targeted ESLint;
+- production build.
+
+The no-cookie request to `/documents` redirected to `/login`. The login screen
+was checked at desktop and mobile widths with no horizontal overflow.
+Authorized register rendering and database RLS remain unverified because no
+safe database target was available to establish or apply the migration state.
 
 Last verified Attendance migration:
 
@@ -1079,3 +1166,59 @@ The governing principle remains:
 **CONFIGURED -> FUNCTIONAL -> AUTOMATED -> VALIDATED**
 
 No material capability is declared complete merely because it exists in code.
+
+---
+
+## 29. VERIFIED UPDATE — 2026-10-17
+
+This update records current source and test evidence; it does not supersede the
+need to verify the live database and deployed application.
+
+- Canonical identity is **SAKATA TECHNOLOGIES** (company) and **SAKATA
+  OPERATING SYSTEMS** (multi-tenant software platform); School OS is a product
+  within the platform.
+- Login includes a keyboard-operable password visibility control and password
+  recovery request/completion UI. A production-browser check confirmed
+  show/hide behavior, recovery entry, and no horizontal overflow at 1440px and
+  390px. No credentials or recovery email were submitted. Supabase email
+  delivery and redirect configuration remain unverified.
+- Attendance update now rejects inactive or unavailable/out-of-organization
+  enrollment references before writing. Focused action tests cover those
+  application paths with mocked database queries; this is not RLS evidence.
+- See [School OS capability inventory](./school-os-capability-inventory.md)
+  for route-level data, authorization, test, limitation and next-action
+  evidence. The command center now uses exact counts for key totals, labels
+  capped operational queues as previews, pages the student/enrollment
+  lifecycle analysis, surfaces query failures, and formats dates/currency
+  using organization settings.
+- Latest School OS focused tests: **8 passed** across command-center
+  formatting, task action and attendance action tests. These use mocked
+  database dependencies and are not RLS evidence. Full Vitest suite:
+  **171 passed across 26 files**; targeted ESLint: **passed**; final
+  production build: **passed** with `/school/tasks` compiled.
+- An unauthenticated browser request to `/school/attendance` redirected to
+  `/login`. Authenticated School OS screens and database-backed writes were
+  not verified.
+- In the latest production-browser check, unauthenticated `/school` and
+  `/school/tasks` both redirected to `/login`. The redirected login page had
+  no horizontal overflow at 1440px and 390px. Authenticated School OS layout
+  and interactions remain unverified.
+- `/school/tasks` now reuses the existing tenant-scoped task page/actions;
+  task changes refresh `/school/tasks`, `/school`, and the original
+  `/control/tasks` route. School shell navigation/module cards are
+  permission-gated. The command center now uses exact status/account counts,
+  explicitly labeled capped previews, full paged student/enrollment scans,
+  organization timezone/locale/currency formatting, and surfaces query
+  errors.
+- No assessment result workflow or separate School Blackbox specification
+  was found. Assessment module/configuration entries are not operational
+  implementation evidence.
+- The Document Register remains source-implemented only. Its migration has
+  not been applied to a known, authorized non-production database; live RLS
+  and authenticated route verification remain release gates. No remote
+  migration was attempted.
+- **Next action:** establish an explicitly authorized non-production
+  Supabase database (or a working local stack), resolve CLI BOM parsing
+  without modifying or exposing `.env.local`, then apply migrations and run
+  the two-organization RLS suite before declaring any tenant-facing workflow
+  production-ready.

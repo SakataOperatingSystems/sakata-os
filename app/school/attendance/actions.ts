@@ -58,6 +58,34 @@ function getErrorMessage(
   return `Failed to ${operation} attendance.`;
 }
 
+async function getActiveEnrollmentError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  enrollmentId: string,
+  operation: "create" | "update",
+): Promise<string | null> {
+  const { data: enrollment, error } = await supabase
+    .from("student_enrollments")
+    .select("id, status")
+    .eq("id", enrollmentId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) {
+    return getErrorMessage(error, operation);
+  }
+
+  if (!enrollment) {
+    return "Enrollment not found or you do not have access to it.";
+  }
+
+  if (enrollment.status !== "active") {
+    return "Attendance can only be recorded for an active enrollment.";
+  }
+
+  return null;
+}
+
 export async function createAttendance(
   _previousState: AttendanceActionState,
   formData: FormData
@@ -74,6 +102,20 @@ export async function createAttendance(
       status,
       notes,
     } = validateAttendanceInput(formData);
+
+    const enrollmentError = await getActiveEnrollmentError(
+      supabase,
+      organizationId,
+      enrollmentId,
+      "create",
+    );
+
+    if (enrollmentError) {
+      return {
+        success: false,
+        error: enrollmentError,
+      };
+    }
 
     const { error } = await supabase
       .from("student_attendance")
@@ -134,6 +176,17 @@ export async function updateAttendance(
       status,
       notes,
     } = validateAttendanceInput(formData);
+
+    const enrollmentError = await getActiveEnrollmentError(
+      supabase,
+      organizationId,
+      enrollmentId,
+      "update",
+    );
+
+    if (enrollmentError) {
+      return { success: false, error: enrollmentError };
+    }
 
     const { data, error } = await supabase
       .from("student_attendance")

@@ -39,6 +39,7 @@ type EnrollmentFormProps = {
   students: StudentOption[];
   classes: ClassOption[];
   academicPeriods: AcademicPeriodOption[];
+  initialStudentId?: string;
   initialValues?: {
     id: string;
     studentId: string;
@@ -72,6 +73,7 @@ export default function EnrollmentForm({
   students,
   classes,
   academicPeriods,
+  initialStudentId,
   initialValues,
 }: EnrollmentFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -101,7 +103,7 @@ export default function EnrollmentForm({
           <select
             id="student_id"
             name="student_id"
-            defaultValue={initialValues?.studentId ?? ""}
+            defaultValue={initialValues?.studentId ?? initialStudentId ?? ""}
             required
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500"
           >

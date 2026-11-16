@@ -1,0 +1,406 @@
+import Link from "next/link";
+
+import {
+  hasPermission,
+  requirePermission,
+} from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { createClient } from "@/app/lib/supabase/server";
+
+import StudentFeeAccountForm from "../accounts-form";
+import {
+  adjustStudentFeeAccountSupport,
+  createStudentFeeAccount,
+} from "../accounts-actions";
+import StudentFeeAccountAdjustmentForm from "../accounts-adjustment-form";
+import {
+  getFeeAccountOperatorState,
+  type FeeAccountStatus,
+} from "../accounts-validation";
+
+type AccountRow = {
+  id: string;
+  student_id: string;
+  academic_period_id: string;
+  gross_required_amount: number | string;
+  approved_support_amount: number | string;
+  net_required_amount: number | string;
+  confirmed_payments_amount: number | string;
+  balance_amount: number | string;
+  due_date: string | null;
+  status: FeeAccountStatus;
+};
+
+type StudentRow = {
+  id: string;
+  full_name: string;
+};
+
+type FeeStructureOption = {
+  id: string;
+  fee_item: string;
+  amount: number | string;
+  academic_period_id: string;
+  class_id: string | null;
+};
+
+type Option = {
+  id: string;
+  name: string;
+};
+
+function money(value: number | string) {
+  return new Intl.NumberFormat("en-UG", {
+    style: "currency",
+    currency: "UGX",
+    maximumFractionDigits: 0,
+  }).format(Number(value));
+}
+
+const statusStyles: Record<FeeAccountStatus, string> = {
+  open: "border-sky-900/60 bg-sky-950/30 text-sky-300",
+  partially_paid:
+    "border-amber-900/60 bg-amber-950/30 text-amber-300",
+  paid:
+    "border-emerald-900/60 bg-emerald-950/30 text-emerald-300",
+  overdue:
+    "border-red-900/60 bg-red-950/30 text-red-300",
+  closed:
+    "border-slate-700 bg-slate-800/70 text-slate-300",
+};
+
+const statusLabels: Record<FeeAccountStatus, string> = {
+  open: "Open",
+  partially_paid: "Partially paid",
+  paid: "Paid",
+  overdue: "Overdue",
+  closed: "Closed",
+};
+
+export default async function StudentFeeAccountsPage() {
+  await requirePermission("school.fees.read");
+  const canManageFees = await hasPermission("school.fees.manage");
+
+  const { organizationId } = await getOrganizationContext();
+  const supabase = await createClient();
+
+  const [
+    { data: accounts, error: accountError },
+    { data: students, error: studentError },
+    { data: feeStructures, error: feeError },
+    { data: academicPeriods, error: periodError },
+    { data: classes, error: classError },
+  ] = await Promise.all([
+    supabase
+      .from("school_student_fee_accounts")
+      .select(
+        "id, student_id, academic_period_id, gross_required_amount, approved_support_amount, net_required_amount, confirmed_payments_amount, balance_amount, due_date, status"
+      )
+      .eq("organization_id", organizationId)
+      .order("due_date", {
+        ascending: true,
+        nullsFirst: false,
+      })
+      .order("balance_amount", {
+        ascending: false,
+      }),
+    supabase
+      .from("students")
+      .select("id, full_name")
+      .eq("organization_id", organizationId)
+      .eq("status", "active")
+      .order("full_name"),
+    supabase
+      .from("school_fee_structures")
+      .select(
+        "id, fee_item, amount, academic_period_id, class_id"
+      )
+      .eq("organization_id", organizationId)
+      .eq("status", "active")
+      .order("fee_item"),
+    supabase
+      .from("academic_periods")
+      .select("id, name")
+      .eq("organization_id", organizationId)
+      .order("name"),
+    supabase
+      .from("classes")
+      .select("id, name")
+      .eq("organization_id", organizationId)
+      .order("name"),
+  ]);
+
+  if (accountError) throw new Error(accountError.message);
+  if (studentError) throw new Error(studentError.message);
+  if (feeError) throw new Error(feeError.message);
+  if (periodError) throw new Error(periodError.message);
+  if (classError) throw new Error(classError.message);
+
+  const accountRows = (accounts ?? []) as AccountRow[];
+  const studentRows = (students ?? []) as StudentRow[];
+  const feeRows = (feeStructures ?? []) as FeeStructureOption[];
+  const periodRows = (academicPeriods ?? []) as Option[];
+  const classRows = (classes ?? []) as Option[];
+
+  const studentById = new Map(
+    studentRows.map((student) => [
+      student.id,
+      student.full_name,
+    ])
+  );
+
+  const periodById = new Map(
+    periodRows.map((period) => [period.id, period.name])
+  );
+
+  const classById = new Map(
+    classRows.map((schoolClass) => [
+      schoolClass.id,
+      schoolClass.name,
+    ])
+  );
+
+  const feeStructureOptions = feeRows.map((fee) => ({
+    ...fee,
+    academic_period_name:
+      periodById.get(fee.academic_period_id) ??
+      "Unknown academic period",
+    class_name: fee.class_id
+      ? classById.get(fee.class_id) ?? "Unknown class"
+      : null,
+  }));
+
+  const outstanding = accountRows.filter(
+    (account) => Number(account.balance_amount) > 0
+  );
+
+  const totalGross = accountRows.reduce(
+    (sum, account) =>
+      sum + Number(account.gross_required_amount),
+    0
+  );
+
+  const totalConfirmedPayments = accountRows.reduce(
+    (sum, account) =>
+      sum + Number(account.confirmed_payments_amount),
+    0
+  );
+
+  const totalBalance = accountRows.reduce(
+    (sum, account) =>
+      sum + Number(account.balance_amount),
+    0
+  );
+
+  return (
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+              School Finance
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold">
+              Student Fee Accounts
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              Turn active fee structures into accountable student
+              obligations, preserving gross charges, support and the
+              outstanding balance.
+            </p>
+          </div>
+
+          <Link
+            href="/school/finance"
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:text-white"
+          >
+            Fee Structures
+          </Link>
+        </div>
+
+        <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ["Accounts", accountRows.length],
+            ["Outstanding", outstanding.length],
+            ["Gross required", money(totalGross)],
+            ["Confirmed payments", money(totalConfirmedPayments)],
+            ["Balance", money(totalBalance)],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
+            >
+              <p className="text-sm text-slate-400">{label}</p>
+              <p className="mt-2 text-xl font-semibold">{value}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold">
+              Create student fee account
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Select an active student and an active fee structure.
+              Support is recorded separately from the original gross
+              obligation.
+            </p>
+          </div>
+
+          <StudentFeeAccountForm
+            action={createStudentFeeAccount}
+            students={studentRows}
+            feeStructures={feeStructureOptions}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/70">
+          <div className="border-b border-slate-800 px-6 py-5">
+            <h2 className="text-lg font-semibold">
+              Student fee account register
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Outstanding balances are ordered by due date and then
+              balance.
+            </p>
+          </div>
+
+          {accountRows.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-slate-500">
+              No student fee accounts created yet.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-800">
+              {accountRows.map((account) => {
+                const operator =
+                  getFeeAccountOperatorState({
+                    status: account.status,
+                    balanceAmount: Number(
+                      account.balance_amount
+                    ),
+                    dueDate: account.due_date,
+                  });
+
+                return (
+                  <div
+                    key={account.id}
+                    className="px-6 py-6"
+                  >
+                    <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr_1fr_1.2fr]">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold">
+                            {studentById.get(account.student_id) ??
+                              "Unknown student"}
+                          </h3>
+
+                          <span
+                            className={
+                              "rounded-full border px-2.5 py-1 text-xs font-medium " +
+                              statusStyles[account.status]
+                            }
+                          >
+                            {statusLabels[account.status]}
+                          </span>
+                        </div>
+
+                        <p className="mt-2 text-sm text-slate-400">
+                          {periodById.get(
+                            account.academic_period_id
+                          ) ?? "Unknown academic period"}
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          Gross{" "}
+                          {money(
+                            account.gross_required_amount
+                          )}
+                          {" · "}
+                          Support{" "}
+                          {money(
+                            account.approved_support_amount
+                          )}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Net required
+                        </p>
+                        <p className="mt-1 font-semibold">
+                          {money(account.net_required_amount)}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Payments{" "}
+                          {money(
+                            account.confirmed_payments_amount
+                          )}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Balance
+                        </p>
+                        <p className="mt-1 font-semibold">
+                          {money(account.balance_amount)}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Due{" "}
+                          {account.due_date ?? "No due date"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Next action
+                        </p>
+                        <p className="mt-1 text-sm text-slate-300">
+                          {operator.nextAction}
+                        </p>
+
+                        {operator.exceptions.length > 0 && (
+                          <p className="mt-1 text-xs text-amber-400">
+                            {operator.exceptions.length} exception
+                            {operator.exceptions.length === 1
+                              ? ""
+                              : "s"}
+                          </p>
+                        )}
+
+                        {Number(account.balance_amount) > 0 &&
+                        account.status !== "closed" ? (
+                          <Link
+                            href={`/school/finance/payments?account_id=${encodeURIComponent(account.id)}`}
+                            className="mt-2 inline-flex rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-slate-200"
+                          >
+                            Record payment
+                          </Link>
+                        ) : (
+                          <span className="mt-2 inline-block rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-500">
+                            Account settled
+                          </span>
+                        )}
+
+                        {canManageFees && account.status !== "closed" && (
+                          <StudentFeeAccountAdjustmentForm
+                            accountId={account.id}
+                            currentSupportAmount={Number(
+                              account.approved_support_amount
+                            )}
+                            action={adjustStudentFeeAccountSupport}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}

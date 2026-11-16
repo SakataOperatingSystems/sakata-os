@@ -1,41 +1,55 @@
 import Link from "next/link";
-import {
-  hasPermission,
-  requirePermission,
-} from "@/app/lib/auth/authorization";
+import SchoolCommandCenter from "./command-center";
+import { getCurrentPermissions } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 
 export default async function SchoolHome() {
-  await requirePermission("school.academic_periods.read");
+  const permissions = await getCurrentPermissions();
+  const canReadSchoolHome = [
+    "school.academic_periods.read",
+    "school.education_levels.read",
+    "school.classes.read",
+    "school.admission_requests.read",
+    "school.students.read",
+    "school.enrollments.read",
+    "school.attendance.read",
+    "school.fees.read",
+    "core.tasks.read",
+    "core.documents.read",
+    "memberships.read",
+  ].some((permission) => permissions.has(permission));
+  if (!canReadSchoolHome) {
+    throw new Error(
+      "Forbidden: missing School OS read permission",
+    );
+  }
 
   const { organization } = await getOrganizationContext();
 
-  const canReadAdmissions = await hasPermission(
-    "school.admission_requests.read"
+  const canReadAcademicPeriods = permissions.has(
+    "school.academic_periods.read",
   );
-  const canReadStudents = await hasPermission("school.students.read");
-  const canReadEnrollments = await hasPermission(
-    "school.enrollments.read"
+  const canReadAcademicStructure = permissions.has(
+    "school.education_levels.read",
   );
-  const canReadAttendance = await hasPermission(
-    "school.attendance.read"
+  const canReadClasses = permissions.has("school.classes.read");
+  const canReadAdmissions = permissions.has(
+    "school.admission_requests.read",
   );
-
-  const visibleOperatingSurfaces =
-    3 +
-    (canReadAdmissions ? 1 : 0) +
-    (canReadStudents ? 1 : 0) +
-    (canReadEnrollments ? 1 : 0) +
-    (canReadAttendance ? 1 : 0);
+  const canReadStudents = permissions.has("school.students.read");
+  const canReadEnrollments = permissions.has("school.enrollments.read");
+  const canReadAttendance = permissions.has("school.attendance.read");
+  const canReadFinance = permissions.has("school.fees.read");
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-7xl">
+        <SchoolCommandCenter />
         <header className="mb-10">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-sky-400">
-                SAKATA Operating Systems - Operating Application
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                SAKATA OPERATING SYSTEMS
               </p>
 
               <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
@@ -79,18 +93,14 @@ export default async function SchoolHome() {
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">
-              Visible Operating Surfaces
-            </p>
+            <p className="text-sm text-slate-400">Permission-scoped access</p>
 
-            <p className="mt-2 text-2xl font-bold">
-              {visibleOperatingSurfaces}
-            </p>
+            <p className="mt-2 text-2xl font-bold">Organization roles</p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Academic periods, academic structure, classes, admissions,
-              students, enrollments, and attendance are available according
-              to the organization's permissions.
+              Modules below are available only when your organization role
+              grants access. Each route and operation checks permissions on
+              the server.
             </p>
           </div>
 
@@ -125,6 +135,7 @@ export default async function SchoolHome() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {canReadAcademicPeriods && (
             <Link
               href="/school/academic-periods"
               className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
@@ -146,50 +157,55 @@ export default async function SchoolHome() {
                 Open module &gt;
               </p>
             </Link>
+            )}
 
-            <Link
-              href="/school/academic-structure"
-              className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
-                Academic Structure
-              </p>
+            {canReadAcademicStructure && (
+              <Link
+                href="/school/academic-structure"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
+                  Academic Structure
+                </p>
 
-              <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
-                Education &amp; Class Levels
-              </h3>
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
+                  Education &amp; Class Levels
+                </h3>
 
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Define the education levels and class levels that form the
-                school's academic hierarchy.
-              </p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Define the education levels and class levels that form the
+                  school&apos;s academic hierarchy.
+                </p>
 
-              <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
-                Open module &gt;
-              </p>
-            </Link>
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
 
-            <Link
-              href="/school/classes"
-              className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
-                Academic Structure
-              </p>
+            {canReadClasses && (
+              <Link
+                href="/school/classes"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-sky-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-400">
+                  Academic Structure
+                </p>
 
-              <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
-                Classes
-              </h3>
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-sky-200">
+                  Classes
+                </h3>
 
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Create and manage operational classes using the normalized
-                education-level and class-level structure.
-              </p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Create and manage operational classes using the normalized
+                  education-level and class-level structure.
+                </p>
 
-              <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
-                Open module &gt;
-              </p>
-            </Link>
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-sky-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            )}
 
             {canReadAdmissions && (
               <Link
@@ -312,62 +328,151 @@ export default async function SchoolHome() {
 
             <div className="rounded-xl border border-slate-700 bg-slate-950 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Current State
+                Workflow coverage
               </p>
 
               <p className="mt-2 font-semibold text-emerald-300">
-                Admission workflow operational
+                Student lifecycle routes connected
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Admissions, student, enrollment, and attendance surfaces are
-                live.
+                Database behavior and deployment health have not been verified
+                in this environment.
               </p>
             </div>
           </div>
         </section>
 
+        {canReadFinance && (
+          <section className="mb-10">
+            <div className="mb-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-400">
+                Financial Operations
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold">
+                Fees &amp; Payments
+              </h2>
+
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                Define school charges, turn active fee structures into
+                accountable student obligations, and control payment activity
+                through the financial ledger.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <Link
+                href="/school/finance"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-cyan-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">
+                  Financial Configuration
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-cyan-200">
+                  Fee Structures
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Define tuition and other school charges by academic period,
+                  class, category, frequency, applicability, and due date.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-cyan-300">
+                  Open module &gt;
+                </p>
+              </Link>
+
+              <Link
+                href="/school/finance/accounts"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-cyan-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">
+                  Student Finance
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-cyan-200">
+                  Student Fee Accounts
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Turn active fee structures into student obligations while
+                  preserving gross charges, approved support, payments, and
+                  outstanding balances.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-cyan-300">
+                  Open module &gt;
+                </p>
+              </Link>
+
+              <Link
+                href="/school/finance/payments"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-cyan-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">
+                  Financial Operations
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-cyan-200">
+                  Payment Ledger
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Record payments as pending, confirm received funds, control
+                  reversals, and preserve the payment trail against student
+                  fee accounts.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-cyan-300">
+                  Open module &gt;
+                </p>
+              </Link>
+              <Link
+                href="/school/finance/bursar"
+                className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-cyan-500/40 hover:bg-slate-900/90"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">
+                  Financial Operations
+                </p>
+
+                <h3 className="mt-3 text-xl font-semibold group-hover:text-cyan-200">
+                  Bursar Queue
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Work outstanding student fee accounts by due date, balance,
+                  overdue state, and next financial action.
+                </p>
+
+                <p className="mt-5 text-sm font-semibold text-slate-300 group-hover:text-cyan-300">
+                  Open module &gt;
+                </p>
+              </Link>
+            </div>
+          </section>
+        )}
+
         <section className="grid gap-4 md:grid-cols-2">
           <Link
-            href="/control"
+            href="/applications"
             className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-slate-600 hover:bg-slate-800"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Platform
+              Applications
             </p>
 
             <h2 className="mt-2 text-xl font-semibold">
-              SAKATA Control Plane
+              Switch application
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Return to the SAKATA Operating Systems platform control surface.
+              Return to the applications assigned to this organization.
             </p>
 
             <p className="mt-4 text-sm font-semibold text-emerald-400">
-              Open Control Plane &gt;
-            </p>
-          </Link>
-
-          <Link
-            href="/control/configuration"
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-slate-600 hover:bg-slate-800"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Configuration
-            </p>
-
-            <h2 className="mt-2 text-xl font-semibold">
-              Configuration Center
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Inspect and manage the effective configuration of the
-              organization's active product modules.
-            </p>
-
-            <p className="mt-4 text-sm font-semibold text-emerald-400">
-              Open Configuration &gt;
+              Open Applications &gt;
             </p>
           </Link>
         </section>

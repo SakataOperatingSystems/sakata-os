@@ -1,0 +1,340 @@
+﻿"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { requirePermission } from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { createClient } from "@/app/lib/supabase/server";
+
+import {
+  validateStudentFeeAccountDueDateAdjustment,
+  validateStudentFeeAccountInput,
+  validateStudentFeeAccountSupportAdjustment,
+} from "./accounts-validation";
+
+export type StudentFeeAccountActionState = {
+  success: boolean;
+  error: string | null;
+};
+
+function getErrorMessage(
+  error: { code?: string; message?: string },
+  operation: string
+): string {
+  if (error.code === "23514") {
+    return "The student fee account violates a financial rule.";
+  }
+
+  if (error.code === "23503") {
+    return "The selected student or fee structure is invalid for this organization.";
+  }
+
+  if (error.code === "23505") {
+    return "A student fee account already exists for this fee structure.";
+  }
+
+  if (error.code === "42501") {
+    return "You do not have permission to manage student fee accounts.";
+  }
+
+  return error.message
+    ? `Unable to ${operation} student fee account: ${error.message}`
+    : `Unable to ${operation} student fee account.`;
+}
+
+export async function createStudentFeeAccount(
+  _previousState: StudentFeeAccountActionState,
+  formData: FormData
+): Promise<StudentFeeAccountActionState> {
+  await requirePermission("school.fees.manage");
+
+  const { organizationId } = await getOrganizationContext();
+
+  const input = {
+    studentId: String(formData.get("student_id") ?? ""),
+    feeStructureId: String(formData.get("fee_structure_id") ?? ""),
+    approvedSupportAmount: String(
+      formData.get("approved_support_amount") ?? "0"
+    ),
+  };
+
+  const validation = validateStudentFeeAccountInput(input);
+
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.errors.join(" "),
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: feeStructure, error: feeStructureError } =
+    await supabase
+      .from("school_fee_structures")
+      .select(
+        "id, academic_period_id, class_id, amount, due_date, status"
+      )
+      .eq("id", input.feeStructureId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+  if (feeStructureError) {
+    return {
+      success: false,
+      error: getErrorMessage(
+        feeStructureError,
+        "load fee structure"
+      ),
+    };
+  }
+
+  if (!feeStructure) {
+    return {
+      success: false,
+      error: "Fee structure not found or you do not have access to it.",
+    };
+  }
+
+  if (feeStructure.status !== "active") {
+    return {
+      success: false,
+      error:
+        "Student fee accounts can only be created from active fee structures.",
+    };
+  }
+
+  if (
+    validation.approvedSupportAmount >
+    Number(feeStructure.amount)
+  ) {
+    return {
+      success: false,
+      error:
+        "Approved support cannot exceed the gross fee obligation.",
+    };
+  }
+
+  const { data: student, error: studentError } =
+    await supabase
+      .from("students")
+      .select("id, status")
+      .eq("id", input.studentId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+  if (studentError) {
+    return {
+      success: false,
+      error: getErrorMessage(studentError, "load student"),
+    };
+  }
+
+  if (!student) {
+    return {
+      success: false,
+      error:
+        "Student not found or you do not have access to this student.",
+    };
+  }
+
+  if (student.status !== "active") {
+    return {
+      success: false,
+      error:
+        "Student fee accounts can only be created for active students.",
+    };
+  }
+
+  if (feeStructure.class_id) {
+    const { data: enrollment, error: enrollmentError } =
+      await supabase
+        .from("student_enrollments")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .eq("student_id", input.studentId)
+        .eq("class_id", feeStructure.class_id)
+        .eq(
+          "academic_period_id",
+          feeStructure.academic_period_id
+        )
+        .eq("status", "active")
+        .maybeSingle();
+
+    if (enrollmentError) {
+      return {
+        success: false,
+        error: getErrorMessage(
+          enrollmentError,
+          "validate student enrollment"
+        ),
+      };
+    }
+
+    if (!enrollment) {
+      return {
+        success: false,
+        error:
+          "The student does not have an active enrollment in the class and academic period required by this fee structure.",
+      };
+    }
+  }
+
+  const { error } = await supabase
+    .from("school_student_fee_accounts")
+    .insert({
+      organization_id: organizationId,
+      student_id: input.studentId,
+      academic_period_id: feeStructure.academic_period_id,
+      fee_structure_id: feeStructure.id,
+      gross_required_amount: Number(feeStructure.amount),
+      approved_support_amount:
+        validation.approvedSupportAmount,
+      confirmed_payments_amount: 0,
+      due_date: feeStructure.due_date,
+      status: "open",
+    });
+
+  if (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, "create"),
+    };
+  }
+
+  revalidatePath("/school");
+  revalidatePath("/school/finance");
+  revalidatePath("/school/finance/accounts");
+
+  return {
+    success: true,
+    error: null,
+  };
+}
+
+export async function adjustStudentFeeAccountSupport(
+  _previousState: StudentFeeAccountActionState,
+  formData: FormData
+): Promise<StudentFeeAccountActionState> {
+  await requirePermission("school.fees.manage");
+
+  const { organizationId } = await getOrganizationContext();
+
+  const accountId = String(formData.get("account_id") ?? "");
+  const input = {
+    newApprovedSupportAmount: String(
+      formData.get("new_approved_support_amount") ?? ""
+    ),
+    reason: String(formData.get("reason") ?? ""),
+  };
+
+  if (!accountId.trim()) {
+    return {
+      success: false,
+      error: "Student fee account is required.",
+    };
+  }
+
+  const validation =
+    validateStudentFeeAccountSupportAdjustment(input);
+
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.errors.join(" "),
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc(
+    "adjust_school_student_fee_account_support",
+    {
+      p_account_id: accountId,
+      p_organization_id: organizationId,
+      p_new_support_amount:
+        validation.newApprovedSupportAmount,
+      p_reason: validation.reason,
+    }
+  );
+
+  if (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, "adjust"),
+    };
+  }
+
+  revalidatePath("/school");
+  revalidatePath("/school/students");
+  revalidatePath("/school/finance");
+  revalidatePath("/school/finance/accounts");
+  revalidatePath("/school/finance/bursar");
+
+  return {
+    success: true,
+    error: null,
+  };
+}
+export async function adjustStudentFeeAccountDueDate(
+  _previousState: StudentFeeAccountActionState,
+  formData: FormData
+): Promise<StudentFeeAccountActionState> {
+  await requirePermission("school.fees.manage");
+
+  const { organizationId } = await getOrganizationContext();
+
+  const accountId = String(formData.get("account_id") ?? "");
+  const input = {
+    newDueDate: String(formData.get("new_due_date") ?? ""),
+    reason: String(formData.get("due_date_reason") ?? ""),
+  };
+
+  if (!accountId.trim()) {
+    return {
+      success: false,
+      error: "Student fee account is required.",
+    };
+  }
+
+  const validation =
+    validateStudentFeeAccountDueDateAdjustment(input);
+
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.errors.join(" "),
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc(
+    "adjust_school_student_fee_account_due_date",
+    {
+      p_account_id: accountId,
+      p_organization_id: organizationId,
+      p_new_due_date: validation.newDueDate,
+      p_reason: validation.reason,
+    }
+  );
+
+  if (error) {
+    return {
+      success: false,
+      error: getErrorMessage(error, "adjust due date"),
+    };
+  }
+
+  revalidatePath("/school");
+  revalidatePath("/school/students");
+  revalidatePath("/school/finance");
+  revalidatePath("/school/finance/accounts");
+  revalidatePath("/school/finance/bursar");
+
+  return {
+    success: true,
+    error: null,
+  };
+}
+

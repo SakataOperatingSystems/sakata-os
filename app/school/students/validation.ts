@@ -10,7 +10,6 @@ const STUDENT_STATUSES = [
 export type StudentStatus = (typeof STUDENT_STATUSES)[number];
 
 export interface StudentInput {
-  studentId: string;
   fullName: string;
   gender: string | null;
   dateOfBirth: string | null;
@@ -34,10 +33,6 @@ const GENDERS = [
 export function validateStudentInput(
   formData: FormData
 ): StudentInput {
-  const studentId = String(
-    formData.get("student_id") ?? ""
-  ).trim();
-
   const fullName = String(
     formData.get("full_name") ?? ""
   ).trim();
@@ -78,14 +73,6 @@ export function validateStudentInput(
   const location = rawLocation.trim();
   const notes = rawNotes.trim();
 
-  if (!studentId) {
-    throw new Error("Student ID is required.");
-  }
-
-  if (studentId.length > 100) {
-    throw new Error("Student ID must be 100 characters or fewer.");
-  }
-
   if (!fullName) {
     throw new Error("Student name is required.");
   }
@@ -94,7 +81,10 @@ export function validateStudentInput(
     throw new Error("Student name must be 200 characters or fewer.");
   }
 
-  if (rawGender && !GENDERS.includes(rawGender as (typeof GENDERS)[number])) {
+  if (
+    rawGender &&
+    !GENDERS.includes(rawGender as (typeof GENDERS)[number])
+  ) {
     throw new Error("Invalid student gender.");
   }
 
@@ -127,7 +117,6 @@ export function validateStudentInput(
   }
 
   return {
-    studentId,
     fullName,
     gender: rawGender || null,
     dateOfBirth: rawDateOfBirth || null,

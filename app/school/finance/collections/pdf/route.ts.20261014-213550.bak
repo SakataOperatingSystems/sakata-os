@@ -1,0 +1,263 @@
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { requirePermission } from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { createClient } from "@/app/lib/supabase/server";
+
+function validDate(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value ? value : null;
+}
+
+function safeText(value: string, max = 80) {
+  return value.replace(/[^\x20-\x7E]/g, "?").slice(0, max);
+}
+
+function money(value: number, locale: string, currency: string) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export async function GET(request: Request) {
+  await requirePermission("school.fees.read");
+
+  const { organizationId } = await getOrganizationContext();
+  const supabase = await createClient();
+  const { data: tenantSettings } = await supabase
+    .from("organization_settings")
+    .select("timezone, currency_code, locale")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  const configuredCurrency =
+    typeof tenantSettings?.currency_code === "string" &&
+    /^[A-Z]{3}$/.test(tenantSettings.currency_code)
+      ? tenantSettings.currency_code
+      : "UGX";
+  const configuredLocale =
+    typeof tenantSettings?.locale === "string" &&
+    tenantSettings.locale.trim()
+      ? tenantSettings.locale
+      : "en-UG";
+  const configuredTimezone =
+    typeof tenantSettings?.timezone === "string" &&
+    tenantSettings.timezone.trim()
+      ? tenantSettings.timezone
+      : "Africa/Kampala";
+  const url = new URL(request.url);
+  const date = validDate(url.searchParams.get("date"));
+
+  if (!date) {
+    return new Response("A valid date=YYYY-MM-DD is required.", { status: 400 });
+  }
+
+  const [
+    { data: organization, error: organizationError },
+    { data: payments, error: paymentError },
+  ] = await Promise.all([
+    supabase.from("organizations")
+      .select("name")
+      .eq("id", organizationId)
+      .single(),
+    supabase.from("school_fee_payments")
+      .select("id, student_fee_account_id, amount, payment_date, payment_method, reference, received_by_user_id")
+      .eq("organization_id", organizationId)
+      .eq("payment_date", date)
+      .eq("status", "confirmed")
+      .order("reference", { ascending: true }),
+  ]);
+
+  if (organizationError || paymentError || !organization) {
+    console.error("Collections PDF data lookup failed.");
+    return new Response("Unable to generate collections report.", { status: 500 });
+  }
+
+  const organizationName = organization.name;
+  const rows = payments ?? [];
+  const accountIds = [...new Set(rows.map((p) => p.student_fee_account_id))];
+  const receiverIds = [...new Set(rows.map((p) => p.received_by_user_id))];
+
+  const [{ data: accounts, error: accountError }, { data: receivers, error: receiverError }] =
+    await Promise.all([
+      accountIds.length
+        ? supabase.from("school_student_fee_accounts")
+            .select("id, student_id")
+            .eq("organization_id", organizationId)
+            .in("id", accountIds)
+        : Promise.resolve({ data: [], error: null }),
+      receiverIds.length
+        ? supabase.from("user_profiles")
+            .select("id, display_name")
+            .in("id", receiverIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  if (accountError || receiverError) {
+    return new Response("Unable to load collections report details.", { status: 500 });
+  }
+
+  const accountRows = accounts ?? [];
+  const studentIds = [...new Set(accountRows.map((a) => a.student_id))];
+  const { data: students, error: studentError } = studentIds.length
+    ? await supabase.from("students")
+        .select("id, full_name")
+        .eq("organization_id", organizationId)
+        .in("id", studentIds)
+    : { data: [], error: null };
+
+  if (studentError) {
+    return new Response("Unable to load student details.", { status: 500 });
+  }
+
+  const accountById = new Map(accountRows.map((a) => [a.id, a]));
+  const studentById = new Map((students ?? []).map((s) => [s.id, s.full_name]));
+  const receiverById = new Map(
+    (receivers ?? []).map((r) => [r.id, r.display_name ?? "Unnamed staff"]),
+  );
+
+  const total = rows.reduce((sum, p) => sum + Number(p.amount), 0);
+  const byMethod = new Map<string, number>();
+  for (const row of rows) {
+    byMethod.set(row.payment_method, (byMethod.get(row.payment_method) ?? 0) + Number(row.amount));
+  }
+
+  const pdf = await PDFDocument.create();
+  pdf.setTitle(`Daily Collections - ${organizationName} - ${date}`);
+  pdf.setSubject("Confirmed school payment collections");
+  pdf.setCreator("SAKATA School OS");
+
+  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+  const navy = rgb(0.09, 0.16, 0.28);
+  const muted = rgb(0.36, 0.41, 0.48);
+  const pale = rgb(0.94, 0.96, 0.98);
+  const white = rgb(1, 1, 1);
+  const line = rgb(0.84, 0.87, 0.90);
+
+  const width = 595.28;
+  const height = 841.89;
+  const left = 42;
+  const right = width - 42;
+  const bottom = 48;
+  let page = pdf.addPage([width, height]);
+  let y = height;
+
+  function text(value: string, x: number, top: number, size: number, font = regular, color = navy) {
+    page.drawText(safeText(value, 110), { x, y: top - size, size, font, color });
+  }
+
+  function newPage() {
+    page = pdf.addPage([width, height]);
+    y = height - 48;
+    text(safeText(organizationName, 100), left, y, 10, bold);
+    text(`Daily Collections | ${date}`, left, y - 18, 9, regular, muted);
+    y -= 46;
+    drawTableHeader();
+  }
+
+  function drawTableHeader() {
+    page.drawRectangle({
+      x: left, y: y - 23, width: right - left, height: 23, color: navy,
+    });
+    text("REFERENCE", left + 7, y - 7, 7, bold, white);
+    text("STUDENT", left + 82, y - 7, 7, bold, white);
+    text("RECEIVED BY", left + 205, y - 7, 7, bold, white);
+    text("METHOD", left + 330, y - 7, 7, bold, white);
+    text(`AMOUNT (${configuredCurrency})`, right - 94, y - 7, 7, bold, white);
+    y -= 30;
+  }
+
+  // Branded report header.
+  page.drawRectangle({ x: 0, y: height - 145, width, height: 145, color: navy });
+  text(organizationName, left, height - 34, 19, bold, white);
+  text("DAILY COLLECTIONS REPORT", left, height - 69, 12, bold, white);
+  text(`Collection date: ${date}`, left, height - 94, 10, regular, white);
+  text("Confirmed payments only", left, height - 113, 9, regular, rgb(0.82, 0.87, 0.94));
+
+  y = height - 173;
+  page.drawRectangle({ x: left, y: y - 65, width: right - left, height: 65, color: pale });
+  text("TOTAL CONFIRMED COLLECTIONS", left + 14, y - 12, 8, bold, muted);
+  text(money(total, configuredLocale, configuredCurrency), left + 14, y - 30, 19, bold, navy);
+  text(`${rows.length} confirmed transaction(s)`, left + 14, y - 52, 9, regular, muted);
+  y -= 88;
+
+  text("COLLECTIONS BY PAYMENT METHOD", left, y, 9, bold);
+  y -= 20;
+  for (const [method, amount] of [...byMethod.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    text(method.replaceAll("_", " ").toUpperCase(), left + 4, y, 8, regular, muted);
+    text(money(amount, configuredLocale, configuredCurrency), right - 120, y, 8, bold);
+    y -= 16;
+  }
+
+  y -= 14;
+  text("TRANSACTION REGISTER", left, y, 9, bold);
+  y -= 14;
+  drawTableHeader();
+
+  for (const row of rows) {
+    if (y < bottom + 24) newPage();
+
+    const account = accountById.get(row.student_fee_account_id);
+    const student = studentById.get(account?.student_id ?? "") ?? "Unknown student";
+    const reference = safeText(row.reference, 16);
+    const studentName = safeText(student, 22);
+    const receiver = safeText(
+      receiverById.get(row.received_by_user_id) ?? "Unknown staff",
+      22,
+    );
+    const method = safeText(row.payment_method.replaceAll("_", " "), 16);
+    const amount = Number(row.amount).toLocaleString("en-UG", { maximumFractionDigits: 0 });
+
+    page.drawLine({
+      start: { x: left, y: y - 13 },
+      end: { x: right, y: y - 13 },
+      thickness: 0.5,
+      color: line,
+    });
+    text(reference, left + 7, y, 7, regular);
+    text(studentName, left + 82, y, 7, regular);
+    text(receiver, left + 205, y, 7, regular);
+    text(method, left + 330, y, 7, regular);
+    text(amount, right - 94, y, 7, regular);
+    y -= 23;
+  }
+
+  if (rows.length === 0) {
+    text("No confirmed collections were recorded for this date.", left + 4, y, 9, regular, muted);
+    y -= 22;
+  }
+
+  y -= 8;
+  if (y < bottom + 45) newPage();
+  page.drawLine({
+    start: { x: left, y: y },
+    end: { x: right, y },
+    thickness: 1,
+    color: line,
+  });
+  text(`TOTAL: ${money(total, configuredLocale, configuredCurrency)}`, left + 7, y - 10, 10, bold);
+  text("Generated by SAKATA School OS", left, 34, 7, regular, muted);
+  text(`Page ${pdf.getPageCount()}`, right - 42, 34, 7, regular, muted);
+
+  // Add page numbers to every page.
+  for (const [index, pdfPage] of pdf.getPages().entries()) {
+    pdfPage.drawText(`${index + 1} / ${pdf.getPageCount()}`, {
+      x: right - 45, y: 24, size: 7, font: regular, color: muted,
+    });
+  }
+
+  const bytes = await pdf.save();
+  return new Response(bytes.slice().buffer as ArrayBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="daily-collections-${date}.pdf"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}

@@ -1,4 +1,4 @@
-﻿const TASK_STATUSES = [
+const TASK_STATUSES = [
   "open",
   "in_progress",
   "completed",
@@ -70,6 +70,56 @@ function validateDueDateTime(value: string): string {
   return date.toISOString();
 }
 
+
+export const TASK_STATE_TRANSITIONS: Record<
+  TaskStatus,
+  readonly TaskStatus[]
+> = {
+  open: ["open", "in_progress", "cancelled"],
+  in_progress: ["in_progress", "open", "completed", "cancelled"],
+  completed: ["completed"],
+  cancelled: ["cancelled"],
+};
+
+export function isValidTaskStateTransition(
+  currentStatus: TaskStatus,
+  requestedStatus: TaskStatus
+): boolean {
+  return TASK_STATE_TRANSITIONS[currentStatus].includes(requestedStatus);
+}
+export type TaskException =
+  | "unassigned"
+  | "overdue"
+  | "no_deadline";
+
+export function getTaskExceptions(
+  status: TaskStatus,
+  assignedToUserId: string | null,
+  dueAt: string | null,
+  now = new Date()
+): TaskException[] {
+  if (status === "completed" || status === "cancelled") {
+    return [];
+  }
+
+  const exceptions: TaskException[] = [];
+
+  if (!assignedToUserId) {
+    exceptions.push("unassigned");
+  }
+
+  if (!dueAt) {
+    exceptions.push("no_deadline");
+  } else {
+    const dueDate = new Date(dueAt);
+
+    if (!Number.isNaN(dueDate.getTime()) && dueDate.getTime() < now.getTime()) {
+      exceptions.push("overdue");
+    }
+  }
+
+  return exceptions;
+}
 export function validateTaskInput(formData: FormData): TaskInput {
   const title = String(formData.get("title") ?? "").trim();
 

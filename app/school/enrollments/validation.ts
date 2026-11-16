@@ -1,4 +1,4 @@
-const ENROLLMENT_STATUSES = [
+﻿const ENROLLMENT_STATUSES = [
   "active",
   "completed",
   "withdrawn",
@@ -7,6 +7,32 @@ const ENROLLMENT_STATUSES = [
 ] as const;
 
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
+
+export const ENROLLMENT_STATUS_TRANSITIONS: Record<
+  EnrollmentStatus,
+  readonly EnrollmentStatus[]
+> = {
+  active: [
+    "active",
+    "completed",
+    "withdrawn",
+    "transferred",
+    "cancelled",
+  ],
+  completed: ["completed"],
+  withdrawn: ["withdrawn"],
+  transferred: ["transferred"],
+  cancelled: ["cancelled"],
+};
+
+export function isValidEnrollmentStatusTransition(
+  currentStatus: EnrollmentStatus,
+  requestedStatus: EnrollmentStatus
+): boolean {
+  return ENROLLMENT_STATUS_TRANSITIONS[currentStatus].includes(
+    requestedStatus
+  );
+}
 
 export interface EnrollmentInput {
   studentId: string;

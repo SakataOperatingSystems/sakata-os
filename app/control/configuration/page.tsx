@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/app/lib/auth/authorization";
+import { requirePermission } from "@/app/lib/auth/authorization";
 import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
 import ConfigurationEditor from "./configuration-editor";
@@ -21,6 +21,24 @@ type Product = {
   description: string | null;
 };
 
+type BulkConfigurationRow = {
+  organization_product_id: string;
+  product_id: string;
+  product_code: string;
+  product_name: string;
+  product_description: string | null;
+  organization_product_module_id: string;
+  module_definition_id: string;
+  module_code: string;
+  module_name: string;
+  configuration_definition_id: string;
+  configuration_code: string;
+  value_type: string;
+  effective_value: unknown;
+  value_source: string;
+  is_required: boolean;
+};
+
 type ModuleGroup = {
   moduleId: string;
   moduleCode: string;
@@ -37,156 +55,92 @@ type ProductGroup = {
   modules: ModuleGroup[];
 };
 
+function buildProductGroups(
+  rows: BulkConfigurationRow[]
+): ProductGroup[] {
+  const productGroups = new Map<string, ProductGroup>();
+  const moduleGroups = new Map<string, ModuleGroup>();
+
+  for (const row of rows) {
+    let productGroup = productGroups.get(
+      row.organization_product_id
+    );
+
+    if (!productGroup) {
+      productGroup = {
+        organizationProductId: row.organization_product_id,
+        productId: row.product_id,
+        productCode: row.product_code,
+        productName: row.product_name,
+        productDescription: row.product_description,
+        modules: [],
+      };
+
+      productGroups.set(
+        row.organization_product_id,
+        productGroup
+      );
+    }
+
+    let moduleGroup = moduleGroups.get(
+      row.organization_product_module_id
+    );
+
+    if (!moduleGroup) {
+      moduleGroup = {
+        moduleId: row.module_definition_id,
+        moduleCode: row.module_code,
+        moduleName: row.module_name,
+        configurations: [],
+      };
+
+      moduleGroups.set(
+        row.organization_product_module_id,
+        moduleGroup
+      );
+
+      productGroup.modules.push(moduleGroup);
+    }
+
+    moduleGroup.configurations.push({
+      organization_product_module_id:
+        row.organization_product_module_id,
+      configuration_definition_id:
+        row.configuration_definition_id,
+      module_code: row.module_code,
+      configuration_code: row.configuration_code,
+      value_type: row.value_type,
+      effective_value: row.effective_value,
+      value_source: row.value_source,
+      is_required: row.is_required,
+    });
+  }
+
+  return Array.from(productGroups.values());
+}
+
 export default async function ConfigurationCenterPage() {
   await requirePermission("organization.read");
 
   const context = await getOrganizationContext();
   const supabase = await createClient();
 
-  const { data: organizationProducts, error: organizationProductsError } =
-    await supabase
-      .from("organization_products")
-      .select(
-        `
-          id,
-          product_definition_id,
-          product_definitions (
-            id,
-            code,
-            name,
-            description
-          )
-        `
-      )
-      .eq("organization_id", context.organization.id)
-      .eq("status", "active")
-      .order("created_at");
+  const { data, error } = await supabase.rpc(
+    "resolve_organization_configurations",
+    {
+      p_organization_id: context.organization.id,
+    }
+  );
 
-  if (organizationProductsError) {
+  if (error) {
     throw new Error(
-      `Failed to load active organization products: ${organizationProductsError.message}`
+      `Failed to load active organization configuration: ${error.message}`
     );
   }
 
-  const productGroups: ProductGroup[] = [];
-
-  for (const organizationProduct of organizationProducts ?? []) {
-    const product = Array.isArray(organizationProduct.product_definitions)
-      ? organizationProduct.product_definitions[0]
-      : organizationProduct.product_definitions;
-
-    if (!product) {
-      continue;
-    }
-
-    const typedProduct = product as Product;
-
-    const { data: organizationProductModules, error: modulesError } =
-      await supabase
-        .from("organization_product_modules")
-        .select("id, product_module_id")
-        .eq("organization_product_id", organizationProduct.id)
-        .eq("status", "active")
-        .order("created_at");
-
-    if (modulesError) {
-      throw new Error(
-        `Failed to load active modules for ${typedProduct.code}: ${modulesError.message}`
-      );
-    }
-
-    const modules: ModuleGroup[] = [];
-
-    for (const organizationProductModule of organizationProductModules ?? []) {
-      const { data: productModule, error: productModuleError } =
-        await supabase
-          .from("product_modules")
-          .select("id, module_definition_id")
-          .eq("id", organizationProductModule.product_module_id)
-          .eq("status", "active")
-          .maybeSingle();
-
-      if (productModuleError) {
-        throw new Error(
-          `Failed to load product module for ${typedProduct.code}: ${productModuleError.message}`
-        );
-      }
-
-      if (!productModule) {
-        continue;
-      }
-
-      const { data: moduleDefinition, error: moduleDefinitionError } =
-        await supabase
-          .from("module_definitions")
-          .select("id, code, name, status")
-          .eq("id", productModule.module_definition_id)
-          .eq("status", "active")
-          .maybeSingle();
-
-      if (moduleDefinitionError) {
-        throw new Error(
-          `Failed to load module definition: ${moduleDefinitionError.message}`
-        );
-      }
-
-      if (!moduleDefinition) {
-        continue;
-      }
-
-      const { data: definitions, error: definitionsError } = await supabase
-        .from("module_configuration_definitions")
-        .select("id, code")
-        .eq("module_definition_id", moduleDefinition.id)
-        .eq("status", "active")
-        .order("code");
-
-      if (definitionsError) {
-        throw new Error(
-          `Failed to load configuration definitions for ${moduleDefinition.code}: ${definitionsError.message}`
-        );
-      }
-
-      const configurationRows: ConfigurationRow[] = [];
-
-      for (const definition of definitions ?? []) {
-        const { data: resolved, error: resolutionError } =
-          await supabase.rpc("resolve_module_configuration", {
-            p_organization_product_module_id: organizationProductModule.id,
-            p_configuration_code: definition.code,
-          });
-
-        if (resolutionError) {
-          throw new Error(
-            `Failed to resolve ${moduleDefinition.code}.${definition.code}: ${resolutionError.message}`
-          );
-        }
-
-        if (resolved?.[0]) {
-          configurationRows.push({
-            organization_product_module_id: organizationProductModule.id,
-            ...resolved[0],
-          });
-        }
-      }
-
-      modules.push({
-        moduleId: moduleDefinition.id,
-        moduleCode: moduleDefinition.code,
-        moduleName: moduleDefinition.name,
-        configurations: configurationRows,
-      });
-    }
-
-    productGroups.push({
-      organizationProductId: organizationProduct.id,
-      productId: typedProduct.id,
-      productCode: typedProduct.code,
-      productName: typedProduct.name,
-      productDescription: typedProduct.description,
-      modules,
-    });
-  }
+  const productGroups = buildProductGroups(
+    (data ?? []) as BulkConfigurationRow[]
+  );
 
   const moduleCount = productGroups.reduce(
     (total, product) => total + product.modules.length,

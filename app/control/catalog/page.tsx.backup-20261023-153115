@@ -1,0 +1,679 @@
+import Link from "next/link";
+import { requirePermission } from "@/app/lib/auth/authorization";
+import { getOrganizationContext } from "@/app/lib/auth/organization-context";
+import { createClient } from "@/app/lib/supabase/server";
+import {
+  assessRegistryProduct,
+  formatImplementationReadiness,
+  formatPortfolioLifecycle,
+  opportunityScoringCriteria,
+  platformFamilies,
+  portfolioCandidates,
+  type RegistryProduct,
+} from "@/app/control/catalog/catalogue";
+
+type Product = RegistryProduct & { id: string };
+
+type Deployment = {
+  id: string;
+  product: Product;
+  moduleCount: number;
+};
+
+export default async function ProductCataloguePage() {
+  await requirePermission("organization.read");
+
+  const context = await getOrganizationContext();
+  const supabase = await createClient();
+
+  const { data: products, error: productsError } = await supabase
+    .from("product_definitions")
+    .select("id, code, name, description, status")
+    .eq("status", "active")
+    .order("name");
+
+  if (productsError) {
+    throw new Error(
+      `Failed to load operating product catalogue: ${productsError.message}`
+    );
+  }
+
+  const activeProducts = (products ?? []) as Product[];
+
+  const { data: organizationProducts, error: deploymentsError } =
+    await supabase
+      .from("organization_products")
+      .select(
+        `
+          id,
+          product_definition_id,
+          product_definitions (
+            id,
+            code,
+            name,
+            description,
+            status
+          )
+        `
+      )
+      .eq("organization_id", context.organization.id)
+      .eq("status", "active")
+      .order("created_at");
+
+  if (deploymentsError) {
+    throw new Error(
+      `Failed to load organization deployments: ${deploymentsError.message}`
+    );
+  }
+
+  const deployments: Deployment[] = [];
+
+  for (const organizationProduct of organizationProducts ?? []) {
+    const product = Array.isArray(organizationProduct.product_definitions)
+      ? organizationProduct.product_definitions[0]
+      : organizationProduct.product_definitions;
+
+    if (!product) {
+      continue;
+    }
+
+    const { data: modules, error: modulesError } = await supabase
+      .from("organization_product_modules")
+      .select("id")
+      .eq("organization_product_id", organizationProduct.id)
+      .eq("status", "active");
+
+    if (modulesError) {
+      throw new Error(
+        `Failed to load active modules for ${product.code}: ${modulesError.message}`
+      );
+    }
+
+    deployments.push({
+      id: organizationProduct.id,
+      product: product as Product,
+      moduleCount: modules?.length ?? 0,
+    });
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+      <aside className="mb-8 lg:sticky lg:top-6 lg:mb-0 lg:self-start">
+        <div
+          tabIndex={0}
+          aria-label="Control Plane navigation"
+          className="max-h-[45vh] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-3 lg:max-h-none lg:overflow-visible"
+        >
+          <div className="px-3 pb-4 pt-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-400">
+              SAKATA TECHNOLOGIES
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              SAKATA OPERATING SYSTEMS
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Platform
+            </p>
+
+            <Link
+              href="/control"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Control Plane
+            </Link>
+
+            <Link
+              href="/control/catalog"
+              className="block rounded-xl bg-slate-800 px-3 py-2.5 text-sm font-semibold text-white"
+              aria-current="page"
+            >
+              Product Catalogue
+            </Link>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Product Families
+            </span>
+
+            <Link
+              href="/control/verification/modules"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Modules
+            </Link>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Capabilities
+            </span>
+          </div>
+
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <p className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Organization
+            </p>
+
+            <Link
+              href="/control/organizations"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >Organizations</Link>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Entitlements
+            </span>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Subscriptions
+            </span>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Users &amp; Roles
+            </span>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Permissions
+            </span>
+          </div>
+
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <p className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Operations
+            </p>
+
+            <Link
+              href="/control/configuration"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Configuration
+            </Link>
+
+            <Link
+              href="/control/workflows"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Workflows
+            </Link>
+
+            <Link
+              href="/control/automation"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Automations
+            </Link>
+
+            <Link
+              href="/control/tasks"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Tasks
+            </Link>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              Integrations
+            </span>
+          </div>
+
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <p className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Governance
+            </p>
+
+            <Link
+              href="/control/verification/notifications"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Audit &amp; Evidence
+            </Link>
+
+            <span
+              title="Control Plane surface not implemented yet"
+              className="block cursor-default rounded-xl px-3 py-2.5 text-sm text-slate-600"
+            >
+              System Health
+            </span>
+
+            <Link
+              href="/control/verification/modules"
+              className="block rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              Deployments
+            </Link>
+          </div>
+
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <p className="px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Applications
+            </p>
+
+            <Link
+              href="/school"
+              className="block rounded-xl bg-emerald-400/10 px-3 py-2.5 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/15"
+            >
+              School OS
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      <div className="mx-auto w-full max-w-7xl">
+        <header className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
+            SAKATA TECHNOLOGIES
+          </p>
+          <div className="mt-4 flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+            <div>
+              <p className="text-sm font-medium tracking-[0.12em] text-slate-400">
+                SAKATA OPERATING SYSTEMS · CONTROL PLANE
+              </p>
+              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+                Product portfolio
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
+                A multi-tenant platform for distinct operating products. This
+                portfolio view brings registry entries and business
+                opportunities together without treating either as proof of
+                customer demand or product readiness.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <SummaryCard
+                label="Active registry records"
+                value={activeProducts.length}
+              />
+              <SummaryCard
+                label="Proposed OS candidates"
+                value={portfolioCandidates.length}
+              />
+              <SummaryCard
+                label="Additional platform families"
+                value={platformFamilies.length}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-sky-900/70 bg-sky-950/40 p-5 text-sm leading-6 text-sky-100/90">
+            <p className="font-semibold text-sky-100">
+              Platform identity and portfolio status are separate.
+            </p>
+            <p className="mt-1">
+              SAKATA TECHNOLOGIES is the company. SAKATA OPERATING SYSTEMS is
+              the shared product platform. An active database product record
+              means only that its registry lifecycle is active; it does not
+              establish portfolio approval, implementation, verification,
+              production readiness, customer demand, or tenant access.
+            </p>
+          </div>
+        </header>
+
+        <section aria-labelledby="industry-products-heading">
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Shared platform registry
+            </p>
+            <h2
+              id="industry-products-heading"
+              className="mt-2 text-2xl font-semibold"
+            >
+              Industry operating products
+            </h2>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+              These are the active product-definition records returned by the
+              current platform catalogue, not a definitive commercial
+              portfolio. Registry descriptions identify intended scope; they
+              are not independent demand or workflow validation. Records
+              without product evidence remain visible and are marked
+              Not assessed for portfolio review.
+            </p>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {activeProducts.map((product) => {
+              const deployment = deployments.find(
+                (item) => item.product.id === product.id,
+              );
+              const entry = assessRegistryProduct(product, Boolean(deployment));
+
+              return (
+                <article
+                  key={product.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs text-slate-500">
+                        {product.code}
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold">
+                        {product.name}
+                      </h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge label={`Registry: ${product.status}`} />
+                      <StatusBadge
+                        label={`Portfolio: ${formatPortfolioLifecycle(entry.portfolioLifecycle)}`}
+                      />
+                    </div>
+                  </div>
+
+                  <dl className="mt-5 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                    <Detail
+                      label="Intended customer segment"
+                      value={entry.customerSegment}
+                    />
+                    <Detail
+                      label="Business problem"
+                      value={entry.businessProblem}
+                    />
+                    <Detail
+                      label="Proposed solution / workflow scope"
+                      value={
+                        product.description ??
+                        "No solution scope recorded in the registry."
+                      }
+                    />
+                    <Detail
+                      label="Implementation readiness"
+                      value={formatImplementationReadiness(entry.readiness)}
+                    />
+                    <Detail
+                      label="Evidence and research"
+                      value={entry.evidence}
+                    />
+                    <Detail
+                      label="Portfolio priority"
+                      value="Unranked — evidence is insufficient for a trustworthy comparison."
+                    />
+                  </dl>
+
+                  <div className="mt-5 border-t border-slate-800 pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Availability to {context.organization.name}
+                    </p>
+                    {entry.tenantAvailability === "assigned" && deployment ? (
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-emerald-300">
+                          Active organization assignment ·{" "}
+                          {deployment.moduleCount} active modules
+                        </p>
+                        <Link
+                          href={`/control/organizations/${context.organization.id}/deployments/${deployment.id}`}
+                          className="text-sm font-semibold text-sky-300 underline decoration-sky-300/40 underline-offset-4 hover:text-sky-200"
+                        >
+                          View assignment
+                        </Link>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-400">
+                        No active assignment for this organization.
+                      </p>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="portfolio-candidates-heading"
+          className="mt-14"
+        >
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+              Business opportunities for evaluation
+            </p>
+            <h2
+              id="portfolio-candidates-heading"
+              className="mt-2 text-2xl font-semibold"
+            >
+              Proposed operating-system candidates
+            </h2>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+              These are explicit portfolio candidates, not active product
+              definitions or implemented applications. Segment and workflow
+              details are hypotheses for discovery, not validated market facts.
+            </p>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {portfolioCandidates.map((candidate) => (
+              <article
+                key={candidate.code}
+                className="rounded-2xl border border-amber-900/60 bg-slate-900 p-5 sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs text-slate-500">
+                      {candidate.code}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold">
+                      {candidate.name}
+                    </h3>
+                  </div>
+                  <StatusBadge label="Portfolio: Proposed" tone="amber" />
+                </div>
+
+                <dl className="mt-5 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                  <Detail
+                    label="Potential customer segment"
+                    value={candidate.customerSegment}
+                  />
+                  <Detail
+                    label="Business problem"
+                    value={candidate.businessProblem}
+                  />
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      Proposed workflows · discovery hypotheses
+                    </dt>
+                    <dd className="mt-2">
+                      <ul className="grid gap-2 sm:grid-cols-2">
+                        {candidate.proposedWorkflows.map((workflow) => (
+                          <li
+                            key={workflow}
+                            className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-slate-300"
+                          >
+                            {workflow}
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                  <Detail
+                    label="Evidence and research"
+                    value={candidate.evidence}
+                  />
+                  <Detail
+                    label="Implementation readiness"
+                    value={formatImplementationReadiness(candidate.readiness)}
+                  />
+                  <Detail
+                    label="Portfolio priority"
+                    value="Unranked — no evidence-backed score is available."
+                  />
+                  <Detail
+                    label="Organization availability"
+                    value="No active assignment in the current organization."
+                  />
+                </dl>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="platform-families-heading"
+          className="mt-14"
+        >
+          <h2
+            id="platform-families-heading"
+            className="text-2xl font-semibold"
+          >
+            Additional canonical platform families
+          </h2>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+            These identity labels are distinct from the industry product
+            registry and opportunity candidates. Product lifecycle,
+            implementation readiness, customer evidence, and organization
+            assignment are not tracked here.
+          </p>
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {platformFamilies.map((family) => (
+              <li
+                key={family}
+                className="rounded-xl border border-slate-800 bg-slate-900 px-5 py-4"
+              >
+                <p className="font-semibold">{family}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Canonical platform family · status not assessed
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          aria-labelledby="opportunity-scoring-heading"
+          className="mt-14 rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Opportunity prioritization
+            </p>
+            <h2
+              id="opportunity-scoring-heading"
+              className="mt-2 text-2xl font-semibold"
+            >
+              Compare only when evidence exists
+            </h2>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+              No numeric scores or ranking are shown: current repository
+              evidence does not support trustworthy market or effort estimates.
+              Gather the following evidence before prioritizing candidates.
+            </p>
+          </div>
+
+          <ul className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {opportunityScoringCriteria.map((criterion) => (
+              <li
+                key={criterion.name}
+                className="rounded-xl border border-slate-800 bg-slate-950/60 p-4"
+              >
+                <p className="font-semibold">{criterion.name}</p>
+                <p className="mt-2 text-sm leading-5 text-slate-400">
+                  Evidence needed: {criterion.evidence}
+                </p>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">
+                  Score: not assessed
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          aria-labelledby="status-definitions-heading"
+          className="mt-10 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6"
+        >
+          <h2 id="status-definitions-heading" className="text-lg font-semibold">
+            Status definitions
+          </h2>
+          <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-3">
+            <Detail
+              label="Proposed"
+              value="Opportunity for discovery; not an approval or implementation claim."
+            />
+            <Detail
+              label="Approved"
+              value="Requires a documented product decision; no such approval is inferred from a registry record."
+            />
+            <Detail
+              label="In development"
+              value="Implementation work exists; the product is not thereby declared complete or production-ready."
+            />
+            <Detail
+              label="Implemented"
+              value="Required product workflows are complete against an agreed scope."
+            />
+            <Detail
+              label="Verified"
+              value="Defined acceptance, authorization, and failure-path evidence has passed."
+            />
+            <Detail
+              label="Production-ready"
+              value="Release, recovery, security, and operational readiness have been evidenced."
+            />
+          </dl>
+          <p className="mt-4 text-xs leading-5 text-slate-500">
+            Organization assignment and product-registry lifecycle remain
+            separate from these portfolio and readiness statuses.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="min-w-32 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function StatusBadge({
+  label,
+  tone = "emerald",
+}: {
+  label: string;
+  tone?: "emerald" | "amber";
+}) {
+  const className =
+    tone === "amber"
+      ? "bg-amber-400/10 text-amber-200"
+      : "bg-emerald-400/10 text-emerald-200";
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-1 leading-6 text-slate-300">{value}</dd>
+    </div>
+  );
+}

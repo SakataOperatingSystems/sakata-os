@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type {
   AttendanceActionState,
 } from "./actions";
@@ -81,6 +81,33 @@ export default function AttendanceForm({
   enrollments,
   initialValues,
 }: AttendanceFormProps) {
+
+  useEffect(() => {
+    const enrollmentId = new URLSearchParams(window.location.search).get(
+      "enrollment_id"
+    );
+
+    if (!enrollmentId) {
+      return;
+    }
+
+    const select = document.querySelector<HTMLSelectElement>(
+      'select[name="enrollment_id"]'
+    );
+
+    if (!select) {
+      return;
+    }
+
+    const optionExists = Array.from(select.options).some(
+      (option) => option.value === enrollmentId
+    );
+
+    if (optionExists) {
+      select.value = enrollmentId;
+    }
+  }, []);
+
   const [state, formAction, pending] = useActionState(
     action,
     INITIAL_STATE

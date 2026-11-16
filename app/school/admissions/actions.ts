@@ -1,4 +1,6 @@
 "use server";
+import { validateAdmissionDecisionEvidence } from "./validation";
+
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/app/lib/supabase/server";
@@ -233,6 +235,22 @@ export async function executeAdmissionWorkflowTransition(
       );
     }
 
+    const decisionReason = String(
+      formData.get("decision_reason") ?? ""
+    ).trim();
+
+    const decisionValidation =
+      validateAdmissionDecisionEvidence({
+        decisionCode: transitionCode,
+        decisionReason,
+      });
+
+    if (!decisionValidation.valid) {
+      throw new Error(
+        decisionValidation.errors.join(" ")
+      );
+    }
+
     await executeWorkflowTransition({
       workflowInstanceId,
       workflowTransitionId,
@@ -241,6 +259,10 @@ export async function executeAdmissionWorkflowTransition(
         action:
           transitionCode ||
           "admission_workflow_transition",
+        decision:
+          decisionValidation.decisionCode,
+        decision_reason:
+          decisionValidation.decisionReason,
       },
     });
 

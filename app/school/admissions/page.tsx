@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import {
   hasPermission,
   requirePermission,
@@ -729,7 +729,11 @@ export default async function AdmissionsPage({
                                 .filter(
                                   (transition) =>
                                     transition.code !==
-                                    "submit_for_review"
+                                    "submit_for_review" &&
+                                    transition.code !==
+                                    "convert_admission" &&
+                                    transition.code !==
+                                    "reconcile_admission_conversion"
                                 )
                                 .map((transition) => {
                                   const isApproval =
@@ -786,7 +790,32 @@ export default async function AdmissionsPage({
                                         name="workflow_transition_code"
                                         value={transition.code}
                                       />
+                                      <div className="space-y-2">
+                                        <label
+                                          htmlFor={`decision-reason-${item.id}-${transition.id}`}
+                                          className="block text-xs font-medium uppercase tracking-wider text-slate-500"
+                                        >
+                                          Decision reason / notes
+                                        </label>
 
+                                        <textarea
+                                          id={`decision-reason-${item.id}-${transition.id}`}
+                                          name="decision_reason"
+                                          required
+                                          rows={3}
+                                          maxLength={1000}
+                                          placeholder={
+                                            isApproval
+                                              ? "Record the basis for approval."
+                                              : isRejection
+                                                ? "Record the basis for rejection."
+                                                : isChanges
+                                                  ? "Record the information or correction required."
+                                                  : "Record the reason for this decision."
+                                          }
+                                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-cyan-500/50"
+                                        />
+                                      </div>
                                       <button
                                         type="submit"
                                         className={`w-full rounded-xl border px-4 py-2 text-sm font-medium transition ${className}`}

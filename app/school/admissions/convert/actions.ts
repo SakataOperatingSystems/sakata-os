@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 
@@ -7,7 +7,7 @@ import { getOrganizationContext } from "@/app/lib/auth/organization-context";
 import { createClient } from "@/app/lib/supabase/server";
 
 export async function convertAdmissionToStudent(admissionId: string) {
-  await requirePermission("school.admission_requests.read");
+  await requirePermission("school.admission_requests.manage");
 
   const { organizationId } = await getOrganizationContext();
 

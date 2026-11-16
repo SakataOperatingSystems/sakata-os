@@ -23,13 +23,21 @@ type StudentFormProps = {
   };
 };
 
-const STUDENT_STATUSES = [
-  "active",
-  "inactive",
-  "graduated",
-  "withdrawn",
-  "transferred",
-  "deceased",
+const STUDENT_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "graduated", label: "Graduated" },
+  { value: "withdrawn", label: "Withdrawn" },
+  { value: "transferred", label: "Transferred" },
+  { value: "deceased", label: "Deceased" },
+] as const;
+
+const GENDER_OPTIONS = [
+  { value: "", label: "Not recorded" },
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+  { value: "unspecified", label: "Unspecified" },
 ] as const;
 
 export default function StudentForm({
@@ -39,6 +47,7 @@ export default function StudentForm({
   const [state, formAction, pending] = useActionState(action, {
     success: false,
     error: null,
+    studentId: null,
   });
 
   return (
@@ -51,26 +60,21 @@ export default function StudentForm({
         />
       )}
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <div>
-          <label
-            htmlFor="student_id"
-            className="mb-2 block text-sm font-medium text-slate-300"
-          >
+      {initialValues?.studentId && (
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             Student ID
-          </label>
-
-          <input
-            id="student_id"
-            name="student_id"
-            type="text"
-            required
-            defaultValue={initialValues?.studentId ?? ""}
-            placeholder="e.g. STU-001"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-sky-500"
-          />
+          </p>
+          <p className="mt-1 font-mono text-sm font-semibold text-slate-200">
+            {initialValues.studentId}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            System-managed identity
+          </p>
         </div>
+      )}
 
+      <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label
             htmlFor="full_name"
@@ -104,11 +108,11 @@ export default function StudentForm({
             defaultValue={initialValues?.gender ?? ""}
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
           >
-            <option value="">Not recorded</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-            <option value="unspecified">Unspecified</option>
+            {GENDER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -179,9 +183,9 @@ export default function StudentForm({
             defaultValue={initialValues?.status ?? "active"}
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
           >
-            {STUDENT_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status}
+            {STUDENT_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -249,8 +253,19 @@ export default function StudentForm({
       )}
 
       {state.success && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          Student saved successfully.
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-300">
+          <p className="font-semibold">
+            Student saved successfully.
+          </p>
+
+          {state.studentId && (
+            <p className="mt-2">
+              Student ID:{" "}
+              <span className="font-mono font-semibold">
+                {state.studentId}
+              </span>
+            </p>
+          )}
         </div>
       )}
 

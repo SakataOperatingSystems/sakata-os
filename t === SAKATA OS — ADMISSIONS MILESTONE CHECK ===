@@ -1,0 +1,17 @@
+warning: in the working copy of 'app/control/configuration/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/tasks/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/tasks/form.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/tasks/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/tasks/validation.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/workflows/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/control/workflows/form.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/admissions/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/admissions/form.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/admissions/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/admissions/validation.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/students/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/students/form.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/students/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/school/students/validation.ts', LF will be replaced by CRLF the next time Git touches it

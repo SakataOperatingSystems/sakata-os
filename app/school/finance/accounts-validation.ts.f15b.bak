@@ -1,0 +1,170 @@
+export const FEE_ACCOUNT_STATUSES = [
+  "open",
+  "partially_paid",
+  "paid",
+  "overdue",
+  "closed",
+] as const;
+
+export type FeeAccountStatus = (typeof FEE_ACCOUNT_STATUSES)[number];
+
+export type StudentFeeAccountInput = {
+  studentId: string;
+  feeStructureId: string;
+  approvedSupportAmount: string;
+};
+
+export function validateStudentFeeAccountInput(
+  input: StudentFeeAccountInput
+):
+  | { valid: true; approvedSupportAmount: number }
+  | { valid: false; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!input.studentId.trim()) {
+    errors.push("Student is required.");
+  }
+
+  if (!input.feeStructureId.trim()) {
+    errors.push("Fee structure is required.");
+  }
+
+  const support = Number(input.approvedSupportAmount);
+
+  if (!Number.isFinite(support) || support < 0) {
+    errors.push("Approved support must be zero or greater.");
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    approvedSupportAmount: support,
+  };
+}
+
+export function calculateFeeAccountAmounts(
+  grossRequiredAmount: number,
+  approvedSupportAmount: number,
+  confirmedPaymentsAmount: number
+) {
+  if (grossRequiredAmount < 0) {
+    throw new Error("Gross required amount cannot be negative.");
+  }
+
+  if (approvedSupportAmount < 0) {
+    throw new Error("Approved support cannot be negative.");
+  }
+
+  if (approvedSupportAmount > grossRequiredAmount) {
+    throw new Error(
+      "Approved support cannot exceed gross required amount."
+    );
+  }
+
+  if (confirmedPaymentsAmount < 0) {
+    throw new Error("Confirmed payments cannot be negative.");
+  }
+
+  const netRequiredAmount =
+    grossRequiredAmount - approvedSupportAmount;
+
+  const balanceAmount = Math.max(
+    0,
+    netRequiredAmount - confirmedPaymentsAmount
+  );
+
+  return {
+    grossRequiredAmount,
+    approvedSupportAmount,
+    netRequiredAmount,
+    confirmedPaymentsAmount,
+    balanceAmount,
+  };
+}
+
+export function getFeeAccountOperatorState(input: {
+  status: FeeAccountStatus;
+  balanceAmount: number;
+  dueDate: string | null;
+  today?: string;
+}) {
+  const today =
+    input.today ?? new Date().toISOString().slice(0, 10);
+
+  const exceptions: string[] = [];
+
+  if (
+    input.status === "open" &&
+    input.balanceAmount > 0 &&
+    !input.dueDate
+  ) {
+    exceptions.push("missing_due_date");
+  }
+
+  if (
+    input.balanceAmount > 0 &&
+    input.dueDate &&
+    input.dueDate < today &&
+    input.status !== "closed"
+  ) {
+    exceptions.push("overdue_balance");
+  }
+
+  let nextAction = "Closed";
+
+  if (input.status === "open") {
+    nextAction =
+      input.balanceAmount > 0
+        ? "Record payment"
+        : "Account settled";
+  } else if (input.status === "partially_paid") {
+    nextAction = "Follow up outstanding balance";
+  } else if (input.status === "paid") {
+    nextAction = "Account settled";
+  } else if (input.status === "overdue") {
+    nextAction = "Follow up overdue balance";
+  }
+
+  return {
+    nextAction,
+    exceptions,
+  };
+}
+
+export type StudentFeeAccountSupportAdjustmentInput = {
+  newApprovedSupportAmount: string;
+  reason: string;
+};
+
+export function validateStudentFeeAccountSupportAdjustment(
+  input: StudentFeeAccountSupportAdjustmentInput
+):
+  | { valid: true; newApprovedSupportAmount: number; reason: string }
+  | { valid: false; errors: string[] } {
+  const errors: string[] = [];
+  const support = Number(input.newApprovedSupportAmount);
+  const reason = input.reason.trim();
+
+  if (!Number.isFinite(support) || support < 0) {
+    errors.push("Approved support must be zero or greater.");
+  }
+
+  if (!reason) {
+    errors.push("A correction reason is required.");
+  } else if (reason.length > 500) {
+    errors.push("The correction reason must be 500 characters or fewer.");
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    newApprovedSupportAmount: support,
+    reason,
+  };
+}
